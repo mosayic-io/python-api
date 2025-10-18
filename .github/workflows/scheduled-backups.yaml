@@ -1,0 +1,55 @@
+name: supabase-backup-to-gcp
+
+on:
+  push:
+    branches: [ none ]  # set this to main
+  workflow_dispatch:
+  # schedule:             # Uncomment this to start running it everyday
+  #   - cron: '0 1 * * *' # Runs every day at midnight
+
+jobs:
+  run_db_backup:
+    runs-on: ubuntu-latest
+    env:
+      supabase_db_url: ${{ secrets.SUPABASE_DB_URL }}  # e.g., postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Backup roles
+        run: supabase db dump --db-url "$supabase_db_url" -f roles.sql --role-only
+
+      - name: Backup schema
+        run: supabase db dump --db-url "$supabase_db_url" -f schema.sql
+
+      - name: Backup data
+        run: supabase db dump --db-url "$supabase_db_url" -f data.sql --data-only
+
+      # Authenticate to Google Cloud using a service account key stored in GitHub Secrets.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}'
+
+      # Set up gcloud and install gsutil.
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gsutil'
+
+      # Upload the backup files to the designated GCP Cloud Storage bucket.
+      - name: Upload backups to GCP Cloud Storage
+        env:
+          GCP_BUCKET: ${{ secrets.GCP_BUCKET }}
+        run: |
+          gsutil cp roles.sql gs://$GCP_BUCKET/backups/roles.sql
+          gsutil cp schema.sql gs://$GCP_BUCKET/backups/schema.sql
+          gsutil cp data.sql gs://$GCP_BUCKET/backups/data.sql

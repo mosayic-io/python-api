@@ -1,0 +1,43 @@
+name: Deploy to Cloud Run
+
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Authenticate with Google Cloud
+      if: github.event_name == 'push'
+      env:
+        GCLOUD_SERVICE_KEY_DEV: ${{ secrets.GCLOUD_SERVICE_KEY_DEV }}
+      run: |
+        echo $GCLOUD_SERVICE_KEY_DEV | base64 --decode > $HOME/gcloud-key.json
+        gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
+        gcloud config set project ${{ secrets.GCLOUD_PROJECT_DEV }}
+
+    - name: Authenticate with Google Cloud
+      if: github.event_name == 'release'
+      env:
+        GCLOUD_SERVICE_KEY_PROD: ${{ secrets.GCLOUD_SERVICE_KEY_PROD }}
+      run: |
+        echo $GCLOUD_SERVICE_KEY_PROD | base64 --decode > $HOME/gcloud-key.json
+        gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
+        gcloud config set project ${{ secrets.GCLOUD_PROJECT_PROD }}
+
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy yourspace-api \
+          --source . \
+          --region europe-west1 \
+          --platform managed \
+          --allow-unauthenticated

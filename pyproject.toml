@@ -1,0 +1,61 @@
+[project]
+name = "poc-api"
+version = "0.1.0"
+description = "Health and nutrition tracking API with AI-powered features"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Web Framework & Server
+    "fastapi>=0.116.1",
+    "uvicorn>=0.23.2",
+    "starlette>=0.46.2",
+    # Authentication & Security
+    "firebase-admin>=6.9.0",
+    # Database & Storage
+    "supabase>=2.17.0",
+    # Google Cloud Services
+    "google-cloud-secret-manager>=2.24.0",
+    # AI/ML Framework
+    "openai>=1.95.1",
+    "pydantic-ai>=0.0.14",
+    # Configuration & Utilities
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "python-dotenv>=1.1.1",
+    # HTTP Client
+    "httpx>=0.27.0",
+    # Date/Time Utilities
+    "pytz>=2024.1",
+    "python-dateutil>=2.9.0",
+    # Caching
+    "cachetools>=5.3.0",
+    "feedparser>=6.0.11",
+    "requests>=2.32.4",
+    "validators>=0.35.0",
+]
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.14",
+    "black>=24.0.0",
+    "flake8>=7.0.0",
+    "ipython>=8.0.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-mock>=3.14.1",
+]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-env>=1.1.0",
+    "httpx>=0.28.1",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Ignore known Supabase library deprecation warnings that will be fixed in a future release
+    "ignore:The 'timeout' parameter is deprecated:DeprecationWarning",
+    "ignore:The 'verify' parameter is deprecated:DeprecationWarning",
+]

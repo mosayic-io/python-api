@@ -1,7 +1,7 @@
 [project]
-name = "mosaygent"
+name = "api"
 version = "0.1.0"
-description = "Health and nutrition tracking API with AI-powered features"
+description = "API for the mobile app"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -22,8 +22,4 @@ test = [
 ]
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    # Ignore known Supabase library deprecation warnings that will be fixed in a future release
-    "ignore:The 'timeout' parameter is deprecated:DeprecationWarning",
-    "ignore:The 'verify' parameter is deprecated:DeprecationWarning",
-]
+filterwarnings = []

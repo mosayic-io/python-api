@@ -1,22 +1,12 @@
+"""
+You can create any API endpoints you need in this file. Mosayic abstracts away the initialization
+and boilerplate code into the API's "app" variable below, allowing you to get started with ease.
+
+Later, if you need to more control, you can access the FastAPI app instance directly, or just create your own.
+"""
 from mosayic import app
-from fastapi.responses import HTMLResponse
-
-from app.core.settings import get_settings
-from app.services.logger import get_logger
-
-logger = get_logger(__name__)
-settings = get_settings()
 
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    html_content = """
-    <html>
-        <body>
-            <h1>The Python API</h1>
-            <p>This is the API root. If you're in the development environment, visit <a href="/docs">/docs</a> to see the available
-            endpoints.</p>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content, status_code=200)
+@app.get("/example")
+async def example_route():
+    return { "message": "Welcome to your Python API!" }

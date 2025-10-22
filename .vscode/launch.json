@@ -16,7 +16,7 @@
         "LOG_LEVEL": "DEBUG"
       },
       "jinja": true,
-      "justMyCode": true
+      "justMyCode": false
     },
     {
       "name": "Pytest",

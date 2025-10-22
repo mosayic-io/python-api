@@ -12,7 +12,14 @@ dependencies = [
     "pydantic>=2.12.3",
     "supabase>=2.22.0",
     "uvicorn>=0.37.0",
+    "mosaygent",
+    "mosayic"
 ]
+
+
+[tool.uv.sources]
+mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent" }
+mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }
 
 [dependency-groups]
 dev = []

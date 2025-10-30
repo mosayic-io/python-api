@@ -6,8 +6,6 @@ Later, if you need to more control, you can access the FastAPI app instance dire
 """
 from mosayic import app
 
-import mosaygent
-
 
 @app.get("/example")
 async def example_route():

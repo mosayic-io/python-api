@@ -10,22 +10,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /code
 
 # Copy the requirements file into the container
-COPY ./pyproject.toml ./poetry.lock* /code/
+COPY ./pyproject.toml ./uv.lock* /code/
 
-# Install poetry
-RUN pip install poetry
-
-# Disable the creation of a virtual environment by poetry
-RUN poetry config virtualenvs.create false
+# Install uv
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin:$PATH"
 
 # Install the dependencies
-RUN poetry install --only main
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy the rest of the application code into the container
 COPY ./app /code/app
-
-COPY ./admin_config.json /code/
-COPY ./admin_config.dev.json /code/
 
 EXPOSE 8080
 

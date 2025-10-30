@@ -3,7 +3,7 @@ name = "api"
 version = "0.1.0"
 description = "API for the mobile app"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "fastapi>=0.119.0",
     "firebase-admin>=7.1.0",
@@ -12,22 +12,22 @@ dependencies = [
     "pydantic>=2.12.3",
     "supabase>=2.22.0",
     "uvicorn>=0.37.0",
-    "mosaygent",
-    "mosayic"
+    "mosayic>=0.0.1",
 ]
 
 
 [tool.uv.sources]
-mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent" }
-mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }
+mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
+mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic", editable = true }
+
 
 [dependency-groups]
-dev = []
+dev = [
+    "mosaygent>=0.0.1",
+]
+
 test = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-mock>=3.15.1",
 ]
-
-[tool.pytest.ini_options]
-filterwarnings = []

@@ -1,65 +1,50 @@
-*.py[cod]
-*.log
-*.jar
-Pipfile.lock
-__pycache__
-*/__pycache__/*
-.pytest_cache
-Thumbs.db
-.python*_env
 .env
 .env*
-.venv
-.pytest_cache
-.coverage
-firebase_config.json
-
-build
-dist
-/media
-node_modules
-.DS_Store
-.env
-keyfile*
-supabase/seed.sql
-supabase/roles.sql
-
-# Supabase
-.branches
-.temp
-.env
-
-
-# Supabase
-.branches
-.temp
-
-# dotenvx
 .env.keys
 .env.local
 .env.*.local
 
+*.py[cod]
+__pycache__
+Pipfile.lock
 
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+node_modules/
+bower_components
 
-node_modules
-.DS_Store
+build
+build/Release
 dist
 dist-ssr
+/media
+
+logs
+*.log
+
+.pytest_cache
+.coverage
 coverage
-*.local
+.nyc_output
+lib-cov
 
-/cypress/videos/
-/cypress/screenshots/
+.npm
+.eslintcache
+.yarn-integrity
+.node_repl_history
 
-# Editor directories and files
+*.pid
+*.pid.lock
+*.seed
+pids
+
+.firebase/
+.dataconnect
+firebase_config.json
+
+.branches
+.temp
+supabase/seed.sql
+supabase/roles.sql
+
 .vscode/*
 !.vscode/extensions.json
 !.vscode/launch.json
@@ -70,21 +55,27 @@ coverage
 *.sln
 *.sw?
 
-*.tsbuildinfo
-
-# Yarn Berry
 .yarn/*
 !.yarn/releases
 !.yarn/plugins
 !.yarn/versions
 !.yarn/sdks
 !.yarn/cache
-
-# Exclude specific non-essential files
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
 
+/cypress/videos/
+/cypress/screenshots/
 
-.env
-.env.*
+*.tsbuildinfo
+*.jar
+*.tgz
+*.local
+keyfile*
+Thumbs.db
+.DS_Store
+.python*_env
+.venv
+.grunt
+.lock-wscript

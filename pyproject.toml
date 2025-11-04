@@ -16,9 +16,9 @@ dependencies = [
 ]
 
 
-[tool.uv.sources]
-mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
-mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }
+# [tool.uv.sources]
+# mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
+# mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }
 
 
 [dependency-groups]

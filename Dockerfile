@@ -18,7 +18,7 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install the dependencies
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --locked
 
 # Copy the rest of the application code into the container
 COPY ./app /code/app

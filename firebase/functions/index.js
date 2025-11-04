@@ -1,17 +1,24 @@
 const functions = require("firebase-functions/v1");
 const logger = require("firebase-functions/logger");
 const {createClient} = require("@supabase/supabase-js");
+const admin = require("firebase-admin");
+
+// Initialize Firebase Admin (only if not already initialized)
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 exports.createUserInSupabase = functions.auth.user().onCreate(async (user) => {
+  // Extract user information
+  const uid = user.uid;
+  const displayName = user.displayName || null;
+  const email = user.email || null;
+  const photoURL = user.photoURL || null;
+
+  logger.info("New user created", {uid, email, displayName});
+
+  // Supabase operation
   try {
-    // Extract user information
-    const uid = user.uid;
-    const displayName = user.displayName || null;
-    const email = user.email || null;
-    const photoURL = user.photoURL || null;
-
-    logger.info("New user created", {uid, email, displayName});
-
     // Get Supabase credentials from environment variables (Firebase secrets)
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
@@ -42,9 +49,23 @@ exports.createUserInSupabase = functions.auth.user().onCreate(async (user) => {
     }
 
     logger.info("User successfully created in Supabase", {uid, data});
-    return {success: true, uid};
   } catch (error) {
-    logger.error("Failed to create user in Supabase", {error});
+    logger.error("Failed to create user in Supabase", {error, uid});
     throw error;
   }
+
+  // Custom claims operation
+  try {
+    // Set custom claim on the user's token
+    await admin.auth().setCustomUserClaims(uid, {
+      role: "authenticated",
+    });
+
+    logger.info("Custom claim set successfully", {uid, role: "authenticated"});
+  } catch (error) {
+    logger.error("Failed to set custom claims", {error, uid});
+    throw error;
+  }
+
+  return {success: true, uid};
 });

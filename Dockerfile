@@ -18,7 +18,7 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install the dependencies
-RUN uv sync --locked
+RUN uv sync --locked --no-dev
 
 # Copy the rest of the application code into the container
 COPY ./app /code/app
@@ -26,4 +26,4 @@ COPY ./app /code/app
 EXPOSE 8080
 
 # Set the command to run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

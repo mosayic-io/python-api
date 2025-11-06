@@ -5,29 +5,27 @@ description = "API for the mobile app"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "fastapi>=0.119.0",
-    "firebase-admin>=7.1.0",
-    "httpx>=0.28.1",
-    "psutil>=7.1.1",
-    "pydantic>=2.12.3",
-    "supabase>=2.22.0",
-    "uvicorn>=0.37.0",
-    "mosayic>=0.0.1",
+    "fastapi~=0.119",
+    "firebase-admin~=7.1",
+    "httpx~=0.28",
+    "psutil~=7.1",
+    "pydantic~=2.12",
+    "supabase~=2.22",
+    "uvicorn~=0.37",
+    "mosayic~=0.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "mosaygent~=0.1",
+]
+test = [
+    "pytest~=8.4",
+    "pytest-asyncio~=1.2",
+    "pytest-mock~=3.15",
 ]
 
 
 # [tool.uv.sources]
 # mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
 # mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }
-
-
-[dependency-groups]
-dev = [
-    "mosaygent>=0.0.1",
-]
-
-test = [
-    "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
-    "pytest-mock>=3.15.1",
-]

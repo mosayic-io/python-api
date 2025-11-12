@@ -7,6 +7,6 @@ Later, if you need to more control, you can access the FastAPI app instance dire
 from mosayic import app
 
 
-@app.get("/example")
-async def example_route():
+@app.get("/create_stripe_checkout_session")
+async def create_stripe_checkout_session_route():
     return { "message": "Welcome to your Python API!" }

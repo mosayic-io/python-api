@@ -1,0 +1,30 @@
+name: Deploy Supabase Migrations
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Supabase CLI
+      if: github.event_name == 'release'
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - name: Push Supabase Migrations to Prod
+      if: github.event_name == 'release'
+      env:
+        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_PROD }}
+      run: |
+        test -d supabase/migrations || { echo "No supabase/migrations directory"; exit 1; }
+        supabase db push --db-url "$SUPABASE_DB_URL"

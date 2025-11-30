@@ -69,7 +69,7 @@ requires-dist = [
     { name = "fastapi", specifier = "~=0.119" },
     { name = "firebase-admin", specifier = "~=7.1" },
     { name = "httpx", specifier = "~=0.28" },
-    { name = "mosayic", specifier = "~=0.0.1" },
+    { name = "mosayic", directory = "../pymosayic" },
     { name = "psutil", specifier = "~=7.1" },
     { name = "pydantic", specifier = "~=2.12" },
     { name = "supabase", specifier = "~=2.22" },
@@ -77,7 +77,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "mosaygent", specifier = "~=0.1" }]
+dev = [{ name = "mosaygent", editable = "../pymosaygent" }]
 test = [
     { name = "pytest", specifier = "~=8.4" },
     { name = "pytest-asyncio", specifier = "~=1.2" },
@@ -744,7 +744,7 @@ wheels = [
 [[package]]
 name = "mosaygent"
 version = "0.1.2"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../pymosaygent" }
 dependencies = [
     { name = "fastapi" },
     { name = "firebase-admin" },
@@ -765,15 +765,33 @@ dependencies = [
     { name = "supabase" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/21/81/dd775f1164f04b4949f4ff44bf522ace78000fc60df6d981b6463f79de2f/mosaygent-0.1.2.tar.gz", hash = "sha256:06f480961a59b290e971ce6c72e7771c900cc8342420ad1c993867b0fd827307", size = 114428, upload-time = "2025-11-05T14:31:09.83Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/58/7caaa55fec0752d1ff4de1b50b12b7015dcedb5e3cef6418b3775ccc04aa/mosaygent-0.1.2-py3-none-any.whl", hash = "sha256:68e5e03a50a6508ee69ba163a370a12a80377095d5e124494740827e762587d4", size = 35879, upload-time = "2025-11-05T14:31:08.499Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.119.0" },
+    { name = "firebase-admin", specifier = ">=7.1.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "mosayic", specifier = ">=0.0.1" },
+    { name = "psutil", specifier = ">=6.1.1" },
+    { name = "pydantic", specifier = ">=2.12.3" },
+    { name = "pydantic-settings", specifier = ">=2.11.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "pyyaml", specifier = ">=6.0.1" },
+    { name = "requests", specifier = ">=2.32.5" },
+    { name = "resend", specifier = ">=2.17.0" },
+    { name = "supabase", specifier = ">=2.22.0" },
+    { name = "uvicorn", specifier = ">=0.37.0" },
 ]
 
 [[package]]
 name = "mosayic"
-version = "0.0.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.1.0"
+source = { directory = "../pymosayic" }
 dependencies = [
     { name = "fastapi" },
     { name = "firebase-admin" },
@@ -788,9 +806,21 @@ dependencies = [
     { name = "supabase" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/9d/e12230ae4e70ae76d856056306ae86175ce114b6f059d1ca98e322069274/mosayic-0.0.1.tar.gz", hash = "sha256:a4138bf5951af065e8c0d28da6c02c875387223100e3e7bdb74f6415d360341a", size = 11428, upload-time = "2025-10-30T18:34:53.489Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/44/9ccf48706984c8294c10d5c1ae9d67c961fb8820d39864a25dfec929ee35/mosayic-0.0.1-py3-none-any.whl", hash = "sha256:34429aebf45996b5f954ce10079b3496303699389c900648962ee2182c17cf6a", size = 13593, upload-time = "2025-10-30T18:34:52.055Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.119.0" },
+    { name = "firebase-admin", specifier = ">=7.1.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "pydantic", specifier = ">=2.12.3" },
+    { name = "pydantic-settings", specifier = ">=2.11.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "resend", specifier = ">=2.17.0" },
+    { name = "supabase", specifier = ">=2.22.0" },
+    { name = "uvicorn", specifier = ">=0.37.0" },
 ]
 
 [[package]]

@@ -20,10 +20,10 @@ name: Deploy Supabase Migrations
 
 on:
   release:
-    types: [published]
+    types: [none]  # set this to 'published' to run on release creation
   push:
     branches:
-      - none   # Set this to 'main' to turn on the workflow.
+      - none   # set this to 'main' to run on pushes to the main branch
 
 jobs:
   deploy:

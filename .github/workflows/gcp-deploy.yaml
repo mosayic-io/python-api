@@ -1,12 +1,32 @@
-name: Deploy to Cloud Run
+###################################
+#
+# GitHub Actions Workflow File - Deploy the Python API to GCP Cloud Run
+#
+# NOTE: THIS WORKFLOW IS A LITTLE MORE COMPLEX AND IS NOT OFFICIALLY INCLUDED IN MOSAYIC YET.
+# YOU CAN STILL USE IT IF YOU CAN FIGURE OUT HOW TO SET THE RIGHT PERMISSIONS IN GCP (YOU'LL
+# NEED TO CREATE A SERVICE ACCOUNT KEY FOR THE COMPUTE ROLE, BASE64 IT AND PUT IT IN GITHUB
+# ACTIONS SECRETS AS GCLOUD_SERVICE_KEY). OTHERWISE, IGNORE IT FOR NOW UNTIL THE FEATURE BECOMES
+# SUPPORTED IN A MORE USER-FRIENDLY WAY. IN THE MEANTIME, THE API CAN BE DEPLOYED MANUALLY USING
+# THE MOSAYIC DASHBOARD (GITHUB -> Backend API Codebase -> DEPLOY TO GLOUD RUN BUTTON).
+#
+# This workflow deploys the Python API to Google Cloud Run. It deploys to the
+# development environment on pushes to the 'develop' branch, and to production
+# when a new release is published.
+#
+# Requirements:
+# - GCLOUD_SERVICE_KEY: Base64-encoded service account key for prod environment
+# - GCLOUD_PROJECT: Google Cloud project ID for prod environment
+#
+###################################
 
+name: Deploy to Cloud Run
 
 on:
   release:
     types: [published]
   push:
     branches:
-      - develop
+      - none
 
 jobs:
   deploy:
@@ -19,20 +39,20 @@ jobs:
     - name: Authenticate with Google Cloud
       if: github.event_name == 'push'
       env:
-        GCLOUD_SERVICE_KEY_DEV: ${{ secrets.GCLOUD_SERVICE_KEY_DEV }}
+        GCLOUD_SERVICE_KEY: ${{ secrets.GCLOUD_SERVICE_KEY }}
       run: |
-        echo $GCLOUD_SERVICE_KEY_DEV | base64 --decode > $HOME/gcloud-key.json
+        echo $GCLOUD_SERVICE_KEY | base64 --decode > $HOME/gcloud-key.json
         gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
-        gcloud config set project ${{ secrets.GCLOUD_PROJECT_DEV }}
+        gcloud config set project ${{ secrets.GCLOUD_PROJECT }}
 
     - name: Authenticate with Google Cloud
       if: github.event_name == 'release'
       env:
-        GCLOUD_SERVICE_KEY_PROD: ${{ secrets.GCLOUD_SERVICE_KEY_PROD }}
+        GCLOUD_SERVICE_KEY: ${{ secrets.GCLOUD_SERVICE_KEY }}
       run: |
-        echo $GCLOUD_SERVICE_KEY_PROD | base64 --decode > $HOME/gcloud-key.json
+        echo $GCLOUD_SERVICE_KEY | base64 --decode > $HOME/gcloud-key.json
         gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
-        gcloud config set project ${{ secrets.GCLOUD_PROJECT_PROD }}
+        gcloud config set project ${{ secrets.GCLOUD_PROJECT }}
 
     - name: Deploy to Cloud Run
       run: |

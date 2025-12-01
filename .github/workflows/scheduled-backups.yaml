@@ -1,3 +1,28 @@
+###################################
+#
+# GitHub Actions Workflow File - Supabase database Backups
+#
+# This workflow backs up the Supabase database (roles, schema, and data) to
+# Google Cloud Storage. It can be triggered manually or on a schedule.
+#
+# NOTE: THIS WORKFLOW ISN'T OFFICIALLY SUPPORTED BY MOSAYIC YET. YOU CAN USE IT IF YOU
+# FIGURE OUT HOW TO SET UP THE REQUIRED GCP PERMISSIONS AND SECRETS YOURSELF (GCP STORAGE
+# AND GITHUB ACTIONS SECRETS). OTHERWISE, IGNORE IT FOR NOW UNTIL THE FEATURE BECOMES
+# SUPPORTED IN A MORE USER-FRIENDLY WAY. NOTE THAT IF YOU'RE USING THE PAID VERSION OF
+# SUPABASE, THEY PROVIDE AUTOMATIC BACKUPS AS PART OF THE SERVICE, SO YOU WON'T NEED THIS.
+#
+#
+# Requirements:
+# - SUPABASE_DB_URL: Database URL (e.g., postgresql://postgres:[PASSWORD]@db.<ref>.supabase.co:5432/postgres)
+# - FIREBASE_SERVICE_CREDENTIALS: Google Cloud service account credentials JSON
+# - GCP_PROJECT_ID: Google Cloud project ID
+# - GCP_BUCKET: Google Cloud Storage bucket name for storing backups
+#
+# This workflow is currently disabled. To enable scheduled backups, uncomment
+# the 'schedule' section and set the branch from 'none' to 'main'.
+#
+###################################
+
 name: supabase-backup-to-gcp
 
 on:

@@ -1,3 +1,21 @@
+###################################
+#
+# GitHub Actions Workflow File - Deploy Supabase Migrations to production
+#
+# This workflow deploys Supabase database migrations to the production
+# environment whenever a new release is published.
+#
+# Requirements:
+# - The Python API codebase with the migrations folder up to do date.
+# - A GitHub Actions Secret named 'SUPABASE_DB_URL_PROD', containing the database URL.
+#      You can find this URL in the Supabase dashboard; you'll need to also insert the
+#      dataabase password into the URL.
+#
+# This workflow is currently disabled for pushes to 'main' branch. To enable it, change the branch
+# name from 'none' to 'main' in the 'push' event section.
+#
+###################################
+
 name: Deploy Supabase Migrations
 
 on:
@@ -5,7 +23,7 @@ on:
     types: [published]
   push:
     branches:
-      - main
+      - none   # Set this to 'main' to turn on the workflow.
 
 jobs:
   deploy:

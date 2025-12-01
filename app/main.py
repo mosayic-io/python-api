@@ -4,7 +4,7 @@ and boilerplate code into the API's "app" variable below, allowing you to get st
 
 Later, if you need to more control, you can access the FastAPI app instance directly, or just create your own.
 """
-from mosayic import app
+from app import app
 
 
 @app.get("/create_stripe_checkout_session")

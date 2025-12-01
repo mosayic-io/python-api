@@ -26,7 +26,7 @@
       "justMyCode": true,
       "args": [
         "-s",
-        "tests/test_admin_items.py"
+        "tests/"
       ],
       "env": {
         "PYTHONPATH": "${workspaceFolder}",

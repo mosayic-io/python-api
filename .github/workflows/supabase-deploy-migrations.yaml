@@ -42,7 +42,7 @@ jobs:
     - name: Push Supabase Migrations to Prod
       if: github.event_name == 'release'
       env:
-        SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_PROD }}
+        DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
       run: |
         test -d supabase/migrations || { echo "No supabase/migrations directory"; exit 1; }
-        supabase db push --db-url "$SUPABASE_DB_URL"
+        supabase db push --db-url "$DATABASE_CONNECTION_STRING"

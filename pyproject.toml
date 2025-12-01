@@ -11,13 +11,12 @@ dependencies = [
     "psutil~=7.1",
     "pydantic~=2.12",
     "supabase~=2.22",
-    "uvicorn~=0.37",
-    "mosayic~=0.0.1",
+    "uvicorn~=0.37"
 ]
 
 [dependency-groups]
 dev = [
-    "mosaygent==0.1.4",
+    "mosaygent==0.1.7",
 ]
 test = [
     "pytest~=8.4",

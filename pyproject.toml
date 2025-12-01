@@ -16,15 +16,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mosaygent==0.1.7",
+    "mosaygent==0.1.9",
 ]
 test = [
     "pytest~=8.4",
     "pytest-asyncio~=1.2",
     "pytest-mock~=3.15",
 ]
-
-
-# [tool.uv.sources]
-# mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
-# mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }

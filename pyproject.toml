@@ -17,7 +17,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mosaygent~=0.1",
+    "mosaygent==0.1.4",
 ]
 test = [
     "pytest~=8.4",
@@ -26,6 +26,6 @@ test = [
 ]
 
 
-[tool.uv.sources]
-mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
-mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }
+# [tool.uv.sources]
+# mosaygent = { path = "/home/jokea/KealyStudio/Mosayic/pymosaygent", editable = true }
+# mosayic = { path = "/home/jokea/KealyStudio/Mosayic/pymosayic" }

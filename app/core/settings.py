@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # These are loaded from .env.local or environment variables
     supabase_service_role_key: str = ""
     supabase_url: str = ""
-    api_key: str = ""
+    supabase_jwt_secret: str = ""
 
 
 

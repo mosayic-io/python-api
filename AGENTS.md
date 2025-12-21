@@ -14,10 +14,23 @@ This is a **FastAPI** application with a **Supabase** (PostgreSQL) database back
 app/
 ├── core/
 │   ├── settings.py    # Environment variables via Pydantic
-│   └── (services)     # External service classes (Supabase, Stripe, etc.)
-├── __init__.py        # FastAPI app initialization with lifespan and CORS
-└── main.py            # Route definitions
+│   ├── supabase.py    # Supabase client class
+│   ├── stripe.py      # Stripe client class
+│   └── cloudinary.py  # Cloudinary client class (and other third-party services)
+├── services/
+│   ├── example_service.py   # Feature-specific business logic
+│   └── (other services)     # Each feature gets its own service file
+├── routers/
+│   ├── example_router.py    # Feature-specific route definitions
+│   └── (other routers)      # Each feature gets its own router file
+├── __init__.py              # FastAPI app initialization with lifespan and CORS
+└── main.py                  # Route registration
 ```
+
+**Key principles:**
+- **Services (`app/services/`)**: Business logic and error handling for each feature
+- **Routers (`app/routers/`)**: HTTP endpoint definitions only
+- **Core third-party services (`app/core/`)**: Class-based wrappers for external APIs (Supabase, Stripe, Cloudinary, etc.) with initialization and API key loading in `__init__`
 
 ### Environment Variables
 
@@ -77,7 +90,7 @@ When creating new endpoints, follow the router/service separation:
 **Router file (handles routing only):**
 
 ```python
-# app/routes/example_router.py
+# app/routers/example_router.py
 from fastapi import APIRouter, Depends
 from app.services.example_service import ExampleService
 
@@ -110,9 +123,9 @@ class ExampleService:
         return result
 ```
 
-### External Services
+### External Services (Third-Party Integrations)
 
-External services (Supabase, Stripe, Firebase, etc.) should be encapsulated in dedicated classes within the `app/core/` directory.
+Third-party services (Supabase, Stripe, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method.
 
 **Example structure:**
 
@@ -121,19 +134,17 @@ External services (Supabase, Stripe, Firebase, etc.) should be encapsulated in d
 from supabase import create_client, Client
 from app.core.settings import get_settings
 
-settings = get_settings()
 
 class SupabaseClient:
-    _client: Client = None
+    def __init__(self):
+        settings = get_settings()
+        self.client: Client = create_client(
+            settings.supabase_url,
+            settings.supabase_service_role_key
+        )
 
-    @classmethod
-    def get_client(cls) -> Client:
-        if cls._client is None:
-            cls._client = create_client(
-                settings.supabase_url,
-                settings.supabase_service_role_key
-            )
-        return cls._client
+    def query(self, table: str):
+        return self.client.table(table)
 ```
 
 ```python
@@ -141,12 +152,34 @@ class SupabaseClient:
 import stripe
 from app.core.settings import get_settings
 
-settings = get_settings()
 
 class StripeClient:
-    @classmethod
-    def configure(cls):
+    def __init__(self):
+        settings = get_settings()
         stripe.api_key = settings.stripe_secret_key
+        self.stripe = stripe
+
+    def create_checkout_session(self, **kwargs):
+        return self.stripe.checkout.Session.create(**kwargs)
+```
+
+```python
+# app/core/cloudinary.py
+import cloudinary
+from app.core.settings import get_settings
+
+
+class CloudinaryClient:
+    def __init__(self):
+        settings = get_settings()
+        cloudinary.config(
+            cloud_name=settings.cloudinary_cloud_name,
+            api_key=settings.cloudinary_api_key,
+            api_secret=settings.cloudinary_api_secret
+        )
+
+    def upload(self, file, **kwargs):
+        return cloudinary.uploader.upload(file, **kwargs)
 ```
 
 ## Testing

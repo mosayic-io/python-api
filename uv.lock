@@ -40,13 +40,12 @@ wheels = [
 
 [[package]]
 name = "api"
-version = "0.1.0"
+version = "0.1.2"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "firebase-admin" },
     { name = "httpx" },
-    { name = "mosayic" },
     { name = "psutil" },
     { name = "pydantic" },
     { name = "supabase" },
@@ -68,7 +67,6 @@ requires-dist = [
     { name = "fastapi", specifier = "~=0.119" },
     { name = "firebase-admin", specifier = "~=7.1" },
     { name = "httpx", specifier = "~=0.28" },
-    { name = "mosayic", specifier = "~=0.0.1" },
     { name = "psutil", specifier = "~=7.1" },
     { name = "pydantic", specifier = "~=2.12" },
     { name = "supabase", specifier = "~=2.22" },
@@ -76,7 +74,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "mosaygent", specifier = "==0.1.4" }]
+dev = [{ name = "mosaygent", specifier = "==0.1.9" }]
 test = [
     { name = "pytest", specifier = "~=8.4" },
     { name = "pytest-asyncio", specifier = "~=1.2" },
@@ -742,14 +740,13 @@ wheels = [
 
 [[package]]
 name = "mosaygent"
-version = "0.1.4"
+version = "0.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastapi" },
     { name = "firebase-admin" },
     { name = "httpx" },
     { name = "jinja2" },
-    { name = "mosayic" },
     { name = "psutil" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -764,32 +761,9 @@ dependencies = [
     { name = "supabase" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/bc/ae31750d44ff4274f0a843c0f8598b1adb18f1f28bceee0d8ce943ff821c/mosaygent-0.1.4.tar.gz", hash = "sha256:c431612115d8ed72439048c5bcf0c0451eb112aaf9353ac68620abd8f600b255", size = 120663, upload-time = "2025-12-01T14:17:13.28Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/ff/263bdd0622c72373924c2cc4367501d4c87a39041a9050d7a18dc2d6e7d2/mosaygent-0.1.9.tar.gz", hash = "sha256:ff0a77ae337584d3d9d415ef4f5d68154eee72781486c746c66ede5c63719e7d", size = 121273, upload-time = "2025-12-01T20:58:05.124Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/22/4c69e89f991166bacca56cd9daade03bae175ff69f23ba1a2efcb370f52a/mosaygent-0.1.4-py3-none-any.whl", hash = "sha256:3a9a7dadd40a51c3def646284511bd33c1dbc0539e1efc73b434353c3a16969e", size = 42695, upload-time = "2025-12-01T14:17:14.452Z" },
-]
-
-[[package]]
-name = "mosayic"
-version = "0.0.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "fastapi" },
-    { name = "firebase-admin" },
-    { name = "httpx" },
-    { name = "jinja2" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "python-multipart" },
-    { name = "resend" },
-    { name = "supabase" },
-    { name = "uvicorn" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/9d/e12230ae4e70ae76d856056306ae86175ce114b6f059d1ca98e322069274/mosayic-0.0.1.tar.gz", hash = "sha256:a4138bf5951af065e8c0d28da6c02c875387223100e3e7bdb74f6415d360341a", size = 11428, upload-time = "2025-10-30T18:34:53.489Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/44/9ccf48706984c8294c10d5c1ae9d67c961fb8820d39864a25dfec929ee35/mosayic-0.0.1-py3-none-any.whl", hash = "sha256:34429aebf45996b5f954ce10079b3496303699389c900648962ee2182c17cf6a", size = 13593, upload-time = "2025-10-30T18:34:52.055Z" },
+    { url = "https://files.pythonhosted.org/packages/01/d3/ea434f4733e8d859a709c98c442506b0a887d69e2eb535942ca565923b05/mosaygent-0.1.9-py3-none-any.whl", hash = "sha256:0f460734fb1f8f24eb9612c473c47b0762d0fbca730659192e5f4499d8fd7bca", size = 43277, upload-time = "2025-12-01T20:58:04.101Z" },
 ]
 
 [[package]]

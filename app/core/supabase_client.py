@@ -1,3 +1,4 @@
+from supabase_auth.types import UserResponse
 from supabase._async.client import AsyncClient, create_client
 from app.core.logger import get_logger
 from app.core.settings import get_settings
@@ -26,8 +27,7 @@ class SupabaseClient:
         """Initialize environment settings and placeholders for Supabase client."""
         if not hasattr(self, '_initialized'):  # Prevent reinitialization on multiple calls
             self.supabase_url = settings.supabase_url
-            self.supabase_secret_key = settings.supabase_service_role_key
-            self.supabase_jwt_secret = settings.supabase_jwt_secret
+            self.supabase_secret_key = settings.supabase_secret_key
             self._client: AsyncClient | None = None
             self._initialized = True  # Flag to indicate instance has been initialized
 
@@ -64,6 +64,25 @@ class SupabaseClient:
             raise ValueError("Supabase client has not been initialized.")
         self._client = None
         logger.info("Supabase Client closed.")
+
+    async def verify_token(self, token: str) -> UserResponse:
+        """
+        Verifies a Supabase JWT token using the Supabase Auth API.
+
+        Args:
+            token: The JWT token to verify.
+
+        Returns:
+            The UserResponse containing user data.
+
+        Raises:
+            ValueError: If the token is invalid or user not found.
+        """
+        client = await self.get_client()
+        user_response = await client.auth.get_user(jwt=token)
+        if user_response is None or user_response.user is None:
+            raise ValueError("Invalid authentication token")
+        return user_response
 
 
 async def get_supabase_client() -> AsyncClient:

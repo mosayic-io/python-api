@@ -1,8 +1,6 @@
-.env
 .env*
-.env.keys
-.env.local
-.env.*.local
+!.env.local.example
+
 
 *.py[cod]
 __pycache__

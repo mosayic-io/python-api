@@ -84,7 +84,7 @@ Configure in `.env.local` for development:
 | Variable | Description |
 |----------|-------------|
 | `supabase_url` | Supabase project URL |
-| `supabase_service_role_key` | Supabase service role key |
+| `supabase_secret_key` | Supabase service role key |
 | `api_key` | API authentication key |
 | `debug_mode` | Enable debug mode (default: false) |
 | `environment` | Environment name (development/production) |

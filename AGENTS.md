@@ -45,14 +45,14 @@ settings = get_settings()
 
 # Access variables
 url = settings.supabase_url
-key = settings.supabase_service_role_key
+key = settings.supabase_secret_key
 ```
 
 The `get_settings()` function is cached with `@lru_cache()` to ensure a single instance is reused.
 
 **Available settings:**
 - `supabase_url` - Supabase project URL
-- `supabase_service_role_key` - Supabase service role key
+- `supabase_secret_key` - Supabase service role key
 - `api_key` - API authentication key
 - `debug_mode` - Enable debug mode (bool)
 - `environment` - Current environment (development/production)
@@ -140,7 +140,7 @@ class SupabaseClient:
         settings = get_settings()
         self.client: Client = create_client(
             settings.supabase_url,
-            settings.supabase_service_role_key
+            settings.supabase_secret_key
         )
 
     def query(self, table: str):

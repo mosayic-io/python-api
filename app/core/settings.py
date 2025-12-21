@@ -17,9 +17,8 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     # These are loaded from .env.local or environment variables
-    supabase_service_role_key: str = ""
+    supabase_secret_key: str = ""
     supabase_url: str = ""
-    supabase_jwt_secret: str = ""
 
 
 

@@ -1,11 +1,7 @@
-# Claude Code Context
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-For comprehensive guidelines on this codebase, refer to [AGENTS.md](./AGENTS.md).
+**Note**: This project uses `AGENTS.md` files for detailed guidance.
 
-AGENTS.md contains:
-- Application architecture and structure
-- Environment variable configuration via Pydantic settings
-- Code standards (import rules, router/service patterns)
-- External service integration patterns
-- Testing framework and conventions
-- Database schema and migration commands
+## Primary Reference
+
+Please see `AGENTS.md` in this same directory for the main project documentation and guidance.

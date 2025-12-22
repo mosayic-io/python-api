@@ -15,7 +15,6 @@ class SupabaseClient:
     the application's lifecycle. It provides methods to initialize, retrieve, and close
     the Supabase client, facilitating centralized management of Supabase interactions.
     """
-
     _instance = None
 
     def __new__(cls):

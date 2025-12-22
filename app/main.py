@@ -12,7 +12,7 @@ from app.core.auth import get_current_user
 
 
 @app.get("/public")
-async def create_stripe_checkout_session_route():
+async def public_route():
     return {"message": "Welcome to your Python API!"}
 
 

@@ -29,7 +29,7 @@ app.add_middleware(
 
 
 
-# Try to load mosaygent dev routes if available (dev dependency)
+# Try to load mosaygent dev routes if available (dev dependency). Remove this if not using Mosayic.
 try:
     import mosaygent
 except ImportError:

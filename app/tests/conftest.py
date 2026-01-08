@@ -6,12 +6,6 @@ from fastapi import FastAPI
 
 from app.main import app as fastapi_app
 
-# Import fixture modules to make them available
-pytest_plugins = [
-    "tests.fixtures.auth_fixtures",
-    "tests.fixtures.database_fixtures",
-]
-
 
 @pytest.fixture(scope="session")
 def event_loop():

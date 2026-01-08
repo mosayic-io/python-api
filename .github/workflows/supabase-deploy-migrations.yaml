@@ -23,7 +23,7 @@ on:
     types: [none]  # set this to 'published' to run on release creation
   push:
     branches:
-      - main   # set this to 'main' to run on pushes to the main branch
+      - none   # set this to 'main' to run on pushes to the main branch
 
 jobs:
   deploy-migrations:

@@ -9,6 +9,7 @@ from supabase_auth.types import User
 
 from app import app
 from app.core.auth import get_current_user
+from app.routes.auth_router import router as auth_router
 
 
 @app.get("/public")
@@ -19,3 +20,6 @@ async def public_route():
 @app.get("/protected")
 async def protected_route(user: User = Depends(get_current_user)):
     return {"message": "You are authenticated!", "user_id": user.id}
+
+
+app.include_router(auth_router)

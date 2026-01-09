@@ -7,12 +7,11 @@
 #
 # Requirements:
 # - The Python API codebase with the migrations folder up to do date.
-# - A GitHub Actions Secret named 'SUPABASE_DB_URL_PROD', containing the database URL.
+# - A GitHub Actions Secret named 'DATABASE_CONNECTION_STRING', containing the database URL.
 #      You can find this URL in the Supabase dashboard; you'll need to also insert the
-#      dataabase password into the URL.
+#      database password into the URL.
 #
-# This workflow is currently disabled for pushes to 'main' branch. To enable it, change the branch
-# name from 'none' to 'main' in the 'push' event section.
+# This workflow is currently disabled. To enable it, set the on: triggers to the desired branches/events.
 #
 ###################################
 
@@ -20,7 +19,7 @@ name: Deploy Supabase Migrations
 
 on:
   release:
-    types: [none]  # set this to 'published' to run on release creation
+    types: [none]  # set this to 'published' to run on release creation (Recommended)
   push:
     branches:
       - none   # set this to 'main' to run on pushes to the main branch
@@ -34,13 +33,13 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Supabase CLI
-      # if: github.event_name == 'release'
+      if: github.event_name == 'release'
       uses: supabase/setup-cli@v1
       with:
         version: latest
 
     - name: Push Supabase Migrations to Prod
-      # if: github.event_name == 'release'
+      if: github.event_name == 'release'
       env:
         DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
       run: |

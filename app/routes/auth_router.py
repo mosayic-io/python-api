@@ -3,7 +3,7 @@ from supabase_auth.types import User
 
 from app.core.auth import delete_auth_user, get_current_user
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.delete("/users/{user_id}")

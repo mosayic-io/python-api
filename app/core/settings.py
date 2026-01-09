@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env.local",
+        env_file=".env",
         extra='allow',
         env_file_encoding='utf-8'
     )

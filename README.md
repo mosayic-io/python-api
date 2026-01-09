@@ -1,6 +1,6 @@
-# Mosayic Python API
+# Python API
 
-A FastAPI backend application with Supabase database integration.
+A FastAPI backend application with Supabase database integration, designed to compliment the React Native Mobile application Stack at Kealy Studio.
 
 ## Tech Stack
 
@@ -44,7 +44,7 @@ python-api/
 
 1. Install dependencies:
    ```bash
-   uv sync
+   uv sync --all-groups
    ```
 
 2. Start local Supabase:
@@ -54,12 +54,13 @@ python-api/
 
 3. Copy environment variables:
    ```bash
-   cp .env.local.example .env.local
+   mv .env.example .env
+   mv supabase/.env.example supabase/.env
    ```
 
 4. Run the development server:
    ```bash
-   uv run uvicorn app.main:app --reload --port 8080
+   uv run uvicorn app.main:app --host 0.0.0.0 --port 8080
    ```
 
 ### Running Tests
@@ -68,40 +69,36 @@ python-api/
 uv run pytest
 ```
 
-### Docker
 
-Build and run the container:
-
-```bash
-docker build -t mosayic-api .
-docker run -p 8080:8080 mosayic-api
-```
-
-## Environment Variables
-
-Configure in `.env.local` for development:
-
-| Variable | Description |
-|----------|-------------|
-| `supabase_url` | Supabase project URL |
-| `supabase_secret_key` | Supabase service role key |
-| `api_key` | API authentication key |
-| `debug_mode` | Enable debug mode (default: false) |
-| `environment` | Environment name (development/production) |
 
 ## Database
 
 Supabase migrations are in `supabase/migrations/`. Current schema includes:
 
 - `users` - User profiles synced with Supabase Auth
-- `items` - User-owned items
+- `devices` - A user may have many devices
 
-Run migrations locally:
-```bash
-supabase db push
-```
+
 
 ## Deployment
 
 - **API**: Deployed to Google Cloud Run (see `.github/workflows/gcp-deploy.yaml`)
 - **Database**: Migrations deployed via GitHub Actions (see `.github/workflows/supabase-deploy-migrations.yaml`)
+
+The command to deploy is:
+```
+# Set the variables
+export PROJECT_ID=goat-together
+export REGION=eu-west1
+export SERVICE_NAME=goattogether-api
+
+# Get the project number
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+
+# Deploy to Cloud Run
+gcloud run deploy $SERVICE_NAME \
+  --source . \
+  --region=$REGION \
+  --project=$PROJECT_ID \
+  --allow-unauthenticated
+```

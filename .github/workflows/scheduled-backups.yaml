@@ -5,12 +5,13 @@
 # This workflow backs up the Supabase database (roles, schema, and data) to
 # Google Cloud Storage. It can be triggered manually or on a schedule.
 #
-# NOTE: THIS WORKFLOW ISN'T OFFICIALLY SUPPORTED BY MOSAYIC YET. YOU CAN USE IT IF YOU
+# NOTE: THIS WORKFLOW ISN'T OFFICIALLY SUPPORTED. YOU CAN USE IT IF YOU
 # FIGURE OUT HOW TO SET UP THE REQUIRED GCP PERMISSIONS AND SECRETS YOURSELF (GCP STORAGE
 # AND GITHUB ACTIONS SECRETS). OTHERWISE, IGNORE IT FOR NOW UNTIL THE FEATURE BECOMES
 # SUPPORTED IN A MORE USER-FRIENDLY WAY. NOTE THAT IF YOU'RE USING THE PAID VERSION OF
 # SUPABASE, THEY PROVIDE AUTOMATIC BACKUPS AS PART OF THE SERVICE, SO YOU WON'T NEED THIS.
 #
+# Get in touch with John if you're interested in this feature.
 #
 # Requirements:
 # - SUPABASE_DB_URL: Database URL (e.g., postgresql://postgres:[PASSWORD]@db.<ref>.supabase.co:5432/postgres)

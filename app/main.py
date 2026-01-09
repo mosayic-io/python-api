@@ -12,9 +12,9 @@ from app.core.auth import get_current_user
 from app.routes.auth_router import router as auth_router
 
 
-@app.get("/public")
+@app.get("/")
 async def public_route():
-    return {"message": "Welcome to your Python API!"}
+    return {"message": "Welcome to the Python API!"}
 
 
 @app.get("/protected")

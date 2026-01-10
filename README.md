@@ -86,19 +86,26 @@ Supabase migrations are in `supabase/migrations/`. Current schema includes:
 - **Database**: Migrations deployed via GitHub Actions (see `.github/workflows/supabase-deploy-migrations.yaml`)
 
 The command to deploy is:
-```
+
+```bash
 # Set the variables
-export PROJECT_ID=goat-together
-export REGION=eu-west1
-export SERVICE_NAME=goattogether-api
+export PROJECT_ID=
+export REGION=us-east1
+export SERVICE_NAME=
 
 # Get the project number
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+
+# Give the deployment service account access to the secrets
+gcloud projects add-iam-policy-binding $PROJECT_NUMBER \
+  --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
 
 # Deploy to Cloud Run
 gcloud run deploy $SERVICE_NAME \
   --source . \
   --region=$REGION \
   --project=$PROJECT_ID \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --service-account="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
 ```

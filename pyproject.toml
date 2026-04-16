@@ -15,9 +15,8 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "mosaygent==0.1.9",
-]
+dev = []
+
 test = [
     "pytest~=8.4",
     "pytest-asyncio~=1.2",

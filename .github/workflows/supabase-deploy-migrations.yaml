@@ -19,7 +19,7 @@ name: Deploy Supabase Migrations
 
 on:
   release:
-    types: [none]  # set this to 'published' to run on release creation (Recommended)
+    types: [published]  # set this to 'published' to run on release creation (Recommended)
   push:
     branches:
       - none   # set this to 'main' to run on pushes to the main branch

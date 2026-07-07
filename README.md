@@ -44,7 +44,7 @@ python-api/
 | GET | `/protected` | Bearer JWT | Example authenticated route |
 | DELETE | `/auth/users/me` | Bearer JWT | Delete the authenticated user's account |
 
-Interactive docs are served at `/docs` (disabled when `ENVIRONMENT=production`).
+Interactive docs are served at `/docs` (disabled when `APP_ENV=production`).
 
 ## Getting Started
 

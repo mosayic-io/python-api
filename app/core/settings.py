@@ -10,8 +10,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-    # Core settings — set ENVIRONMENT=production in deployed environments
-    environment: str = "development"
+    # Core settings — set APP_ENV=production in deployed environments
+    app_env: str = "development"
 
     # These are loaded from .env or environment variables
     supabase_secret_key: str = ""

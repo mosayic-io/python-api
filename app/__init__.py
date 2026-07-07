@@ -8,7 +8,7 @@ from app.core.settings import get_settings
 settings = get_settings()
 
 # Interactive API docs are only exposed outside production
-is_production = settings.environment == "production"
+is_production = settings.app_env == "production"
 
 
 @asynccontextmanager

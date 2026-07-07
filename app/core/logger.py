@@ -32,11 +32,15 @@ class CustomFormatter(logging.Formatter):
 
 def get_logger(name):
     log_format = " %(levelname)s - %(asctime)s %(name)s(%(lineno)d)::%(funcName)s - %(message)s "
-    handler = logging.StreamHandler()
-    handler.setFormatter(CustomFormatter(log_format))
 
     logger = logging.getLogger(name)
-    logger.addHandler(handler)
+
+    # Guard against duplicate handlers when called twice for the same module
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(CustomFormatter(log_format))
+        logger.addHandler(handler)
+
     logger.setLevel(LOG_LEVEL)
     logger.propagate = False
 

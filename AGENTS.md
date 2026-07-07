@@ -13,24 +13,25 @@ This is a **FastAPI** application with a **Supabase** (PostgreSQL) database back
 ```
 app/
 ├── core/
-│   ├── settings.py    # Environment variables via Pydantic
-│   ├── supabase.py    # Supabase client class
-│   ├── stripe.py      # Stripe client class
-│   └── cloudinary.py  # Cloudinary client class (and other third-party services)
-├── services/
-│   ├── example_service.py   # Feature-specific business logic
-│   └── (other services)     # Each feature gets its own service file
-├── routers/
-│   ├── example_router.py    # Feature-specific route definitions
-│   └── (other routers)      # Each feature gets its own router file
+│   ├── auth.py              # JWT verification dependency + auth helpers
+│   ├── logger.py            # Colored console logger
+│   ├── settings.py          # Environment variables via Pydantic
+│   └── supabase_client.py   # Singleton async Supabase client
+├── routes/
+│   └── auth_router.py       # Auth endpoints (e.g. DELETE /auth/users/me)
+├── tests/
+│   ├── conftest.py          # Shared fixtures (app, async_client)
+│   └── test_*.py            # Endpoint tests
 ├── __init__.py              # FastAPI app initialization with lifespan and CORS
-└── main.py                  # Route registration
+└── main.py                  # API endpoints and route registration
 ```
 
 **Key principles:**
-- **Services (`app/services/`)**: Business logic and error handling for each feature
-- **Routers (`app/routers/`)**: HTTP endpoint definitions only
-- **Core third-party services (`app/core/`)**: Class-based wrappers for external APIs (Supabase, Stripe, Cloudinary, etc.) with initialization and API key loading in `__init__`
+- **Routes (`app/routes/`)**: One router file per feature, HTTP endpoint definitions only
+- **Services (`app/services/`)**: Create this folder as the app grows — business logic and
+  error handling for each feature live here, keeping routers thin
+- **Core third-party services (`app/core/`)**: Class-based wrappers for external APIs
+  (Supabase, Stripe, Cloudinary, etc.) with initialization and API key loading in `__init__`
 
 ### Environment Variables
 
@@ -52,10 +53,10 @@ The `get_settings()` function is cached with `@lru_cache()` to ensure a single i
 
 **Available settings:**
 - `supabase_url` - Supabase project URL
-- `supabase_secret_key` - Supabase service role key
-- `api_key` - API authentication key
-- `debug_mode` - Enable debug mode (bool)
-- `environment` - Current environment (development/production)
+- `supabase_secret_key` - Supabase secret (service role) key
+- `environment` - Current environment (development/production). Interactive API docs are disabled in production.
+
+Add new settings as typed fields on the `Settings` class; they load from `.env` or real environment variables automatically.
 
 ## Code Standards
 
@@ -90,7 +91,7 @@ When creating new endpoints, follow the router/service separation:
 **Router file (handles routing only):**
 
 ```python
-# app/routers/example_router.py
+# app/routes/example_router.py
 from fastapi import APIRouter, Depends
 from app.services.example_service import ExampleService
 
@@ -125,30 +126,10 @@ class ExampleService:
 
 ### External Services (Third-Party Integrations)
 
-Third-party services (Supabase, Stripe, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method.
-
-**Example structure:**
+Third-party services (Supabase, Stripe, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method. See `app/core/supabase_client.py` for the pattern in use.
 
 ```python
-# app/core/supabase.py
-from supabase import create_client, Client
-from app.core.settings import get_settings
-
-
-class SupabaseClient:
-    def __init__(self):
-        settings = get_settings()
-        self.client: Client = create_client(
-            settings.supabase_url,
-            settings.supabase_secret_key
-        )
-
-    def query(self, table: str):
-        return self.client.table(table)
-```
-
-```python
-# app/core/stripe.py
+# app/core/stripe.py (example of adding a new integration)
 import stripe
 from app.core.settings import get_settings
 
@@ -163,23 +144,22 @@ class StripeClient:
         return self.stripe.checkout.Session.create(**kwargs)
 ```
 
+### Authentication
+
+Protect any endpoint by depending on `get_current_user`, which verifies the Supabase JWT
+from the `Authorization: Bearer <token>` header:
+
 ```python
-# app/core/cloudinary.py
-import cloudinary
-from app.core.settings import get_settings
+from fastapi import APIRouter, Depends
+from supabase_auth.types import User
 
+from app.core.auth import get_current_user
 
-class CloudinaryClient:
-    def __init__(self):
-        settings = get_settings()
-        cloudinary.config(
-            cloud_name=settings.cloudinary_cloud_name,
-            api_key=settings.cloudinary_api_key,
-            api_secret=settings.cloudinary_api_secret
-        )
+router = APIRouter()
 
-    def upload(self, file, **kwargs):
-        return cloudinary.uploader.upload(file, **kwargs)
+@router.get("/protected")
+async def protected_route(user: User = Depends(get_current_user)):
+    return {"user_id": user.id}
 ```
 
 ## Testing
@@ -199,30 +179,24 @@ uv run pytest
 
 ### Test Structure
 
-```
-tests/
-├── fixtures/
-│   ├── database_fixtures.py   # Supabase mocks
-│   └── auth_fixtures.py       # Auth mocks
-└── conftest.py                # Shared fixtures
-```
+Tests live in `app/tests/`, one file per feature (`test_routes.py`, `test_auth_delete.py`, ...).
 
-### Key Fixtures
+### Key Fixtures (see `app/tests/conftest.py`)
 
-- `app` - Fresh FastAPI app instance
+- `app` - Fresh FastAPI app instance with cleared dependency overrides
 - `async_client` - HTTP client for endpoint testing
-- `mock_supabase` - Mocked Supabase client with success responses
-- `mock_supabase_error` - Mocked Supabase client with error responses
 
-### Example Test
+Override auth in tests with FastAPI dependency overrides:
 
 ```python
-import pytest
+from types import SimpleNamespace
+from app.core.auth import get_current_user
+from app.main import app as fastapi_app
 
-@pytest.mark.asyncio
-async def test_get_example(async_client, mock_supabase):
-    response = await async_client.get("/examples/123")
-    assert response.status_code == 200
+async def override_current_user():
+    return SimpleNamespace(id="123")
+
+fastapi_app.dependency_overrides[get_current_user] = override_current_user
 ```
 
 ## Database
@@ -231,18 +205,17 @@ async def test_get_example(async_client, mock_supabase):
 
 - Local config: `supabase/config.toml`
 - Migrations: `supabase/migrations/`
-- Project ID: `python-api`
 
 ### Current Schema
 
 **Tables:**
-- `users` - User profiles (synced with Supabase Auth)
-- `items` - User-owned items with foreign key to users
+- `users` - User profiles (synced with Supabase Auth via triggers)
+- `devices` - Push notification tokens, one row per device, foreign key to users
 
 **Key features:**
 - Row Level Security (RLS) enabled on all tables
 - Automatic `updated_at` timestamps via triggers
-- Auth triggers sync users from `auth.users` to `public.users`
+- Auth triggers sync users from `auth.users` to `public.users` (and delete them in tandem)
 
 ### Running Migrations
 
@@ -258,7 +231,7 @@ supabase status
 
 | Task | Command |
 |------|---------|
-| Install dependencies | `uv sync` |
+| Install dependencies | `uv sync --all-groups` |
 | Run dev server | `uv run uvicorn app.main:app --reload --port 8080` |
 | Run tests | `uv run pytest` |
 | Start local Supabase | `supabase start` |

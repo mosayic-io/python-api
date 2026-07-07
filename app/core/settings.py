@@ -1,25 +1,21 @@
-import logging
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
-logger = logging.getLogger(__name__)
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
-        extra='allow',
-        env_file_encoding='utf-8'
+        extra="ignore",
+        env_file_encoding="utf-8",
     )
 
-    # Core settings
-    debug_mode: bool = False
+    # Core settings — set ENVIRONMENT=production in deployed environments
     environment: str = "development"
 
-    # These are loaded from .env.local or environment variables
+    # These are loaded from .env or environment variables
     supabase_secret_key: str = ""
     supabase_url: str = ""
-
 
 
 @lru_cache()

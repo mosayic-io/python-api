@@ -1,5 +1,6 @@
+from supabase import AsyncClient, acreate_client
 from supabase_auth.types import UserResponse
-from supabase._async.client import AsyncClient, create_client
+
 from app.core.logger import get_logger
 from app.core.settings import get_settings
 
@@ -35,7 +36,7 @@ class SupabaseClient:
         Initializes the Supabase Client instance asynchronously.
         """
         if self._client is None:
-            self._client = await create_client(self.supabase_url, self.supabase_secret_key)
+            self._client = await acreate_client(self.supabase_url, self.supabase_secret_key)
             logger.info("Supabase Client initialized.")
 
     async def get_client(self) -> AsyncClient:

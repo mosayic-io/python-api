@@ -1,15 +1,18 @@
-# Use Python 3.12 as the base image
-FROM python:3.12
+# Use Python 3.12 (slim) as the base image
+FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
+# Log straight to stdout so Cloud Run captures output immediately
+ENV PYTHONUNBUFFERED=1
+
 # Set the working directory in the container to /code
 WORKDIR /code
 
-# Copy the requirements file into the container
+# Copy the dependency manifests into the container
 COPY ./pyproject.toml ./uv.lock* /code/
 
 # Install uv

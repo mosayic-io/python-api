@@ -1,6 +1,6 @@
 # Python API
 
-A FastAPI backend application with Supabase database integration, designed to compliment the React Native Mobile application Stack at Kealy Studio.
+A FastAPI backend application with Supabase database integration, designed to complement the React Native mobile application stack at Kealy Studio.
 
 ## Tech Stack
 
@@ -16,21 +16,35 @@ A FastAPI backend application with Supabase database integration, designed to co
 python-api/
 ├── app/
 │   ├── core/
-│   │   ├── __init__.py
-│   │   └── settings.py       # Environment configuration (Pydantic)
-│   ├── __init__.py           # FastAPI app initialization
-│   └── main.py               # API endpoints
+│   │   ├── auth.py            # JWT verification dependency + auth helpers
+│   │   ├── logger.py          # Colored console logger
+│   │   ├── settings.py        # Environment configuration (Pydantic)
+│   │   └── supabase_client.py # Singleton async Supabase client
+│   ├── routes/
+│   │   └── auth_router.py     # Auth endpoints
+│   ├── tests/
+│   │   ├── conftest.py        # pytest fixtures
+│   │   └── test_*.py          # Endpoint tests
+│   ├── __init__.py            # FastAPI app initialization
+│   └── main.py                # API endpoints and route registration
 ├── supabase/
-│   ├── migrations/           # Database migrations
-│   └── config.toml           # Local Supabase configuration
-├── tests/
-│   ├── fixtures/             # Test fixtures
-│   └── conftest.py           # pytest configuration
-├── .github/workflows/        # CI/CD workflows
+│   ├── migrations/            # Database migrations
+│   └── config.toml            # Local Supabase configuration
+├── .github/workflows/         # CI/CD workflows
 ├── Dockerfile
 ├── pyproject.toml
 └── uv.lock
 ```
+
+## API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/` | Public | Welcome message |
+| GET | `/protected` | Bearer JWT | Example authenticated route |
+| DELETE | `/auth/users/me` | Bearer JWT | Delete the authenticated user's account |
+
+Interactive docs are served at `/docs` (disabled when `ENVIRONMENT=production`).
 
 ## Getting Started
 
@@ -54,8 +68,8 @@ python-api/
 
 3. Copy environment variables:
    ```bash
-   mv .env.example .env
-   mv supabase/.env.example supabase/.env
+   cp .env.example .env
+   cp supabase/.env.example supabase/.env
    ```
 
 4. Run the development server:

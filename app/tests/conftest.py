@@ -1,19 +1,10 @@
 """Core test configuration and shared fixtures."""
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
 from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
 from app.main import app as fastapi_app
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Session-wide event loop for async tests"""
-    import asyncio
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="function")

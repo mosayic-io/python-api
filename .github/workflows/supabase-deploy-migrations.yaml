@@ -3,15 +3,15 @@
 # GitHub Actions Workflow File - Deploy Supabase Migrations to production
 #
 # This workflow deploys Supabase database migrations to the production
-# environment whenever a new release is published.
+# environment whenever a new release is published (for example, with
+# `gh release create v1.0.0`). Publishing a release is the deliberate,
+# named act that ships schema changes — pushes to main do not deploy.
 #
 # Requirements:
-# - The Python API codebase with the migrations folder up to do date.
+# - The Python API codebase with the migrations folder up to date.
 # - A GitHub Actions Secret named 'DATABASE_CONNECTION_STRING', containing the database URL.
 #      You can find this URL in the Supabase dashboard; you'll need to also insert the
 #      database password into the URL.
-#
-# This workflow is currently disabled. To enable it, set the on: triggers to the desired branches/events.
 #
 ###################################
 
@@ -19,10 +19,7 @@ name: Deploy Supabase Migrations
 
 on:
   release:
-    types: [published]  # set this to 'published' to run on release creation (Recommended)
-  push:
-    branches:
-      - none   # set this to 'main' to run on pushes to the main branch
+    types: [published]
 
 jobs:
   deploy-migrations:
@@ -30,16 +27,14 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Setup Supabase CLI
-      if: github.event_name == 'release'
-      uses: supabase/setup-cli@v1
+      uses: supabase/setup-cli@v3
       with:
         version: latest
 
     - name: Push Supabase Migrations to Prod
-      if: github.event_name == 'release'
       env:
         DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
       run: |

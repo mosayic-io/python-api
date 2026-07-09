@@ -56,7 +56,8 @@ jobs:
 
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy api-prod \
+        # Service naming convention: <appname>-api-service
+        gcloud run deploy yourapp-api-service \
           --source . \
           --region us-east1 \
           --platform managed \

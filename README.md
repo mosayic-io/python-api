@@ -105,7 +105,7 @@ The command to deploy is:
 # Set the variables
 export PROJECT_ID=
 export REGION=us-east1
-export SERVICE_NAME=
+export SERVICE_NAME=   # convention: <appname>-api-service, e.g. myapp-api-service
 
 # Get the project number
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")

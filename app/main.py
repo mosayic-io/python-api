@@ -10,6 +10,7 @@ from supabase_auth.types import User
 from app import app
 from app.core.auth import get_current_user
 from app.routes.auth_router import router as auth_router
+from app.routes.email_router import router as email_router
 
 
 @app.get("/")
@@ -23,3 +24,4 @@ async def protected_route(user: User = Depends(get_current_user)):
 
 
 app.include_router(auth_router)
+app.include_router(email_router)

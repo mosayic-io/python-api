@@ -21,7 +21,10 @@ python-api/
 │   │   ├── settings.py        # Environment configuration (Pydantic)
 │   │   └── supabase_client.py # Singleton async Supabase client
 │   ├── routes/
-│   │   └── auth_router.py     # Auth endpoints
+│   │   ├── auth_router.py     # Auth endpoints
+│   │   └── email_router.py    # Welcome email (Supabase database webhook)
+│   ├── services/
+│   │   └── email.py           # Outgoing email via Resend (EMAIL_ENABLED gate)
 │   ├── tests/
 │   │   ├── conftest.py        # pytest fixtures
 │   │   └── test_*.py          # Endpoint tests
@@ -43,6 +46,7 @@ python-api/
 | GET | `/` | Public | Welcome message |
 | GET | `/protected` | Bearer JWT | Example authenticated route |
 | DELETE | `/auth/users/me` | Bearer JWT | Delete the authenticated user's account |
+| POST | `/emails/welcome` | X-Webhook-Secret header | Send the welcome email — intended for a Supabase database webhook on `public.users` inserts |
 
 Interactive docs are served at `/docs` (disabled when `APP_ENV=production`).
 

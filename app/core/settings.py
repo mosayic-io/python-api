@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     supabase_secret_key: str = ""
     supabase_url: str = ""
 
+    # Outgoing email via Resend (app/services/email.py). Keep EMAIL_ENABLED
+    # false in development so local runs never email real people. The welcome
+    # endpoint refuses requests unless EMAIL_WEBHOOK_SECRET matches the
+    # X-Webhook-Secret header sent by the Supabase database webhook.
+    email_enabled: bool = False
+    resend_api_key: str = ""
+    email_from: str = ""
+    email_webhook_secret: str = ""
+
 
 @lru_cache()
 def get_settings():

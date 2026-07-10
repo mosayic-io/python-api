@@ -18,7 +18,10 @@ app/
 │   ├── settings.py          # Environment variables via Pydantic
 │   └── supabase_client.py   # Singleton async Supabase client
 ├── routes/
-│   └── auth_router.py       # Auth endpoints (e.g. DELETE /auth/users/me)
+│   ├── auth_router.py       # Auth endpoints (e.g. DELETE /auth/users/me)
+│   └── email_router.py      # POST /emails/welcome (Supabase database webhook)
+├── services/
+│   └── email.py             # Outgoing email via Resend — send_email(), EMAIL_ENABLED gate
 ├── tests/
 │   ├── conftest.py          # Shared fixtures (app, async_client)
 │   └── test_*.py            # Endpoint tests
@@ -28,8 +31,9 @@ app/
 
 **Key principles:**
 - **Routes (`app/routes/`)**: One router file per feature, HTTP endpoint definitions only
-- **Services (`app/services/`)**: Create this folder as the app grows — business logic and
-  error handling for each feature live here, keeping routers thin
+- **Services (`app/services/`)**: Business logic and error handling for each feature live
+  here, keeping routers thin — `email.py` (outgoing email via Resend, best-effort, gated
+  by `EMAIL_ENABLED`) is the pattern to follow
 - **Core third-party services (`app/core/`)**: Class-based wrappers for external APIs
   (Supabase, Stripe, Cloudinary, etc.) with initialization and API key loading in `__init__`
 

@@ -2,20 +2,41 @@
 #
 # GitHub Actions Workflow File - Deploy the Python API to GCP Cloud Run
 #
-# NOTE: THIS WORKFLOW IS A LITTLE MORE COMPLEX AND IS NOT OFFICIALLY INCLUDED IN MOSAYIC YET.
-# YOU CAN STILL USE IT IF YOU CAN FIGURE OUT HOW TO SET THE RIGHT PERMISSIONS IN GCP (YOU'LL
-# NEED TO CREATE A SERVICE ACCOUNT KEY FOR THE COMPUTE ROLE, BASE64 IT AND PUT IT IN GITHUB
-# ACTIONS SECRETS AS GCLOUD_SERVICE_KEY). OTHERWISE, IGNORE IT FOR NOW UNTIL THE FEATURE BECOMES
-# SUPPORTED IN A MORE USER-FRIENDLY WAY. IN THE MEANTIME, THE API CAN BE DEPLOYED MANUALLY USING
-# THE MOSAYIC DASHBOARD (GITHUB -> Backend API Codebase -> DEPLOY TO GLOUD RUN BUTTON).
+# This workflow deploys the API to Google Cloud Run whenever a release is
+# published — the same deliberate, named act that ships your database
+# migrations. Publish a release, and both robots run: the schema and the
+# code that expects it ship together.
 #
-# This workflow deploys the Python API to Google Cloud Run. It deploys to the
-# development environment on pushes to the 'develop' branch, and to production
-# when a new release is published.
+# Until the one-time setup below is done, the workflow skips itself quietly
+# (a green tick, nothing deployed) — a release made before deployment is
+# configured is never marked as a failure.
 #
-# Requirements:
-# - GCLOUD_SERVICE_KEY: Base64-encoded service account key for prod environment
-# - GCLOUD_PROJECT: Google Cloud project ID for prod environment
+# One-time setup (the course walks through this in "The Production Backend"):
+#
+# 1. Fill in the three values in the `env:` block below — your Cloud Run
+#    service name, region, and production Supabase URL.
+#
+# 2. Create a deployer service account and hand its key to GitHub. The key
+#    is the ONLY GitHub secret this workflow needs (it carries the project
+#    id inside it):
+#
+#      PROJECT=<your-gcp-project-id>
+#      gcloud iam service-accounts create github-deployer \
+#        --display-name="GitHub Actions deployer" --project=$PROJECT
+#      for role in roles/run.admin roles/iam.serviceAccountUser \
+#                  roles/cloudbuild.builds.editor roles/artifactregistry.admin \
+#                  roles/storage.admin roles/serviceusage.serviceUsageConsumer; do
+#        gcloud projects add-iam-policy-binding $PROJECT \
+#          --member="serviceAccount:github-deployer@$PROJECT.iam.gserviceaccount.com" \
+#          --role=$role --condition=None
+#      done
+#      gcloud iam service-accounts keys create key.json \
+#        --iam-account=github-deployer@$PROJECT.iam.gserviceaccount.com
+#      gh secret set GCLOUD_SERVICE_KEY < key.json
+#      rm key.json
+#
+# Note the SUPABASE_SECRET_KEY line in the deploy command is NOT a secret —
+# it's a reference to Google Secret Manager, where the real value lives.
 #
 ###################################
 
@@ -23,42 +44,54 @@ name: Deploy to Cloud Run
 
 on:
   release:
-    types: [none]  # set this to 'published' to run on release creation
-  push:
-    branches:
-      - none   # set this to 'main' to run on pushes to the main branch
+    types: [published]
+
+env:
+  # Your Cloud Run service — convention: <appname>-api-service
+  SERVICE_NAME: yourapp-api-service
+  # The region you deploy to
+  GCP_REGION: us-east1
+  # Your production Supabase project URL (not a secret — the same value is
+  # baked into every copy of the mobile app)
+  SUPABASE_URL: https://yourproject.supabase.co
+  # Flips to true once the deployer's key is in GitHub's vault; until then
+  # every step below skips quietly.
+  CONFIGURED: ${{ secrets.GCLOUD_SERVICE_KEY != '' }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Deployment not configured yet — skipping
+      if: env.CONFIGURED != 'true'
+      run: echo "GCLOUD_SERVICE_KEY is not set, so there's nothing to deploy with. This is fine — see the one-time setup in this workflow's header."
+
     - name: Checkout repository
+      if: env.CONFIGURED == 'true'
       uses: actions/checkout@v7
 
     - name: Authenticate with Google Cloud
-      if: github.event_name == 'push'
-      env:
-        GCLOUD_SERVICE_KEY: ${{ secrets.GCLOUD_SERVICE_KEY }}
-      run: |
-        echo $GCLOUD_SERVICE_KEY | base64 --decode > $HOME/gcloud-key.json
-        gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
-        gcloud config set project ${{ secrets.GCLOUD_PROJECT }}
+      if: env.CONFIGURED == 'true'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
 
-    - name: Authenticate with Google Cloud
-      if: github.event_name == 'release'
-      env:
-        GCLOUD_SERVICE_KEY: ${{ secrets.GCLOUD_SERVICE_KEY }}
-      run: |
-        echo $GCLOUD_SERVICE_KEY | base64 --decode > $HOME/gcloud-key.json
-        gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
-        gcloud config set project ${{ secrets.GCLOUD_PROJECT }}
+    - name: Set up gcloud
+      if: env.CONFIGURED == 'true'
+      uses: google-github-actions/setup-gcloud@v2
 
     - name: Deploy to Cloud Run
+      if: env.CONFIGURED == 'true'
       run: |
-        # Service naming convention: <appname>-api-service
-        gcloud run deploy yourapp-api-service \
+        gcloud run deploy "$SERVICE_NAME" \
           --source . \
-          --region us-east1 \
-          --platform managed \
-          --allow-unauthenticated
+          --region "$GCP_REGION" \
+          --allow-unauthenticated \
+          --update-env-vars "APP_ENV=production,LOG_LEVEL=INFO,SUPABASE_URL=${SUPABASE_URL}" \
+          --update-secrets "SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest" \
+          --quiet
+
+    - name: Show the service URL
+      if: env.CONFIGURED == 'true'
+      run: gcloud run services describe "$SERVICE_NAME" --region "$GCP_REGION" --format 'value(status.url)'

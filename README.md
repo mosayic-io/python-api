@@ -100,30 +100,27 @@ Supabase migrations are in `supabase/migrations/`. Current schema includes:
 
 ## Deployment
 
-- **API**: Deployed to Google Cloud Run (see `.github/workflows/gcp-deploy.yaml`)
-- **Database**: Migrations deployed via GitHub Actions (see `.github/workflows/supabase-deploy-migrations.yaml`)
+Publishing a GitHub release is the single deploy ceremony — both workflows
+run on it:
 
-The command to deploy is:
+- **Database**: migrations are pushed to production first (see `.github/workflows/supabase-deploy-migrations.yaml`)
+- **API**: the code is deployed to Google Cloud Run alongside (see `.github/workflows/gcp-deploy.yaml`)
+
+The API workflow needs a one-time setup, documented in its own header: fill
+in the `env:` block (service name, region, Supabase URL), then create a
+`github-deployer` service account and hand its key to GitHub as the
+`GCLOUD_SERVICE_KEY` secret. Until that's done, it skips itself quietly on
+each release. Deploys run as the `github-deployer` account; the service
+itself runs as the project's default compute service account, which needs
+`roles/secretmanager.secretAccessor` to read its secret from Secret Manager.
+
+To deploy by hand instead (the same command the workflow runs):
 
 ```bash
-# Set the variables
-export PROJECT_ID=
-export REGION=us-east1
-export SERVICE_NAME=   # convention: <appname>-api-service, e.g. myapp-api-service
-
-# Get the project number
-PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-
-# Give the deployment service account access to the secrets
-gcloud projects add-iam-policy-binding $PROJECT_NUMBER \
-  --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor"
-
-# Deploy to Cloud Run
-gcloud run deploy $SERVICE_NAME \
+gcloud run deploy <appname>-api-service \
   --source . \
-  --region=$REGION \
-  --project=$PROJECT_ID \
+  --region=us-east1 \
   --allow-unauthenticated \
-  --service-account="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+  --update-env-vars="APP_ENV=production,LOG_LEVEL=INFO,SUPABASE_URL=<your prod supabase url>" \
+  --update-secrets="SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest"
 ```

@@ -30,13 +30,17 @@
 #          --member="serviceAccount:github-deployer@$PROJECT.iam.gserviceaccount.com" \
 #          --role=$role --condition=None
 #      done
-#      gcloud iam service-accounts keys create key.json \
+#      gcloud iam service-accounts keys create ../github-deployer-key.json \
 #        --iam-account=github-deployer@$PROJECT.iam.gserviceaccount.com
-#      gh secret set GCLOUD_SERVICE_KEY < key.json
-#      rm key.json
+#      gh secret set GCLOUD_SERVICE_KEY < ../github-deployer-key.json
+#
+#    (The key file lands one folder up — outside the repo, where git can't
+#    reach it. Once gh has stored it, delete the file the ordinary way.)
 #
 # Note the SUPABASE_SECRET_KEY line in the deploy command is NOT a secret —
-# it's a reference to Google Secret Manager, where the real value lives.
+# it's a reference to Google Secret Manager, where the real value lives. If
+# your API gains more secrets, add them to the same --update-secrets line as
+# comma-separated NAME=NAME:latest pairs after creating each in the vault.
 #
 ###################################
 

@@ -105,6 +105,29 @@ CREATE POLICY "Users can delete their own devices"
     USING (auth.uid() = user_id);
 
 -- ============================================================================
+-- GRANTS FOR API ROLES
+-- ============================================================================
+-- RLS policies only filter rows on top of table-level privileges — they are
+-- not permissions themselves. Postgres checks the table ACL first and rejects
+-- queries with "permission denied" (42501) before RLS is even evaluated.
+-- Supabase's stock default privileges usually grant DML to the API roles
+-- automatically, but that's a database setting that can be (and sometimes is)
+-- hardened away, so this migration grants what it needs explicitly. Any future
+-- table needs its own GRANTs alongside its policies.
+
+-- users: policies exist for SELECT / UPDATE / DELETE (inserts happen via the
+-- SECURITY DEFINER trigger on auth.users, so authenticated needs no INSERT).
+GRANT SELECT, UPDATE, DELETE ON public.users TO authenticated;
+
+-- devices: the app upserts (SELECT + INSERT + UPDATE) and deletes push tokens.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.devices TO authenticated;
+
+-- The backend connects as service_role, which bypasses RLS but still requires
+-- table-level privileges.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.users TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.devices TO service_role;
+
+-- ============================================================================
 -- FUNCTIONS
 -- ============================================================================
 

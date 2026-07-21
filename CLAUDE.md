@@ -236,7 +236,7 @@ supabase status
 | Task | Command |
 |------|---------|
 | Install dependencies | `uv sync --all-groups` |
-| Run dev server | `uv run uvicorn app.main:app --reload --port 8080` |
+| Run dev server | `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080` |
 | Run tests | `uv run pytest` |
 | Start local Supabase | `supabase start` |
 | Push migrations | `supabase db push` |

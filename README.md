@@ -78,7 +78,7 @@ Interactive docs are served at `/docs` (disabled when `APP_ENV=production`).
 
 4. Run the development server:
    ```bash
-   uv run uvicorn app.main:app --host 0.0.0.0 --port 8080
+   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
    ```
 
 ### Running Tests

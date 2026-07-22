@@ -88,12 +88,16 @@ jobs:
     - name: Deploy to Cloud Run
       if: env.CONFIGURED == 'true'
       run: |
+        # --clear-base-image: Cloud Run's managed base-image tracking can
+        # refuse a REdeploy of a --source service without it. Harmless on
+        # a first deploy.
         gcloud run deploy "$SERVICE_NAME" \
           --source . \
           --region "$GCP_REGION" \
           --allow-unauthenticated \
           --update-env-vars "APP_ENV=production,LOG_LEVEL=INFO,SUPABASE_URL=${SUPABASE_URL}" \
           --update-secrets "SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest" \
+          --clear-base-image \
           --quiet
 
     - name: Show the service URL

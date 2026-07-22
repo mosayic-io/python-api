@@ -122,5 +122,6 @@ gcloud run deploy <appname>-api-service \
   --region=us-east1 \
   --allow-unauthenticated \
   --update-env-vars="APP_ENV=production,LOG_LEVEL=INFO,SUPABASE_URL=<your prod supabase url>" \
-  --update-secrets="SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest"
+  --update-secrets="SUPABASE_SECRET_KEY=SUPABASE_SECRET_KEY:latest" \
+  --clear-base-image
 ```

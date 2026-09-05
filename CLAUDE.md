@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is a **FastAPI** application with a **Supabase** (PostgreSQL) database backend. Testing uses **pytest**.
+The backend for the mobile app, in two halves:
+
+- **`supabase/`** — the PostgreSQL database: schema, RLS and SQL functions,
+  shipped as migrations. Account deletion (an app-store requirement) is a
+  Postgres function here, `delete_own_account()`, so the app is store-ready
+  before any server is deployed.
+- **`app/`** — the **FastAPI** application for everything beyond the
+  database: AI features, email, push, background work. Nothing in the fresh
+  mobile app calls it. Testing uses **pytest**.
 
 ## Core Architecture
 
@@ -18,7 +26,6 @@ app/
 │   ├── settings.py          # Environment variables via Pydantic
 │   └── supabase_client.py   # Singleton async Supabase client
 ├── routes/
-│   ├── auth_router.py       # Auth endpoints (e.g. DELETE /auth/users/me)
 │   └── email_router.py      # POST /emails/welcome (Supabase database webhook)
 ├── services/
 │   └── email.py             # Outgoing email via Resend — send_email(), EMAIL_ENABLED gate
@@ -35,7 +42,7 @@ app/
   here, keeping routers thin — `email.py` (outgoing email via Resend, best-effort, gated
   by `EMAIL_ENABLED`) is the pattern to follow
 - **Core third-party services (`app/core/`)**: Class-based wrappers for external APIs
-  (Supabase, Stripe, Cloudinary, etc.) with initialization and API key loading in `__init__`
+  (Supabase, Cloudinary, etc.) with initialization and API key loading in `__init__`
 
 ### Environment Variables
 
@@ -130,23 +137,28 @@ class ExampleService:
 
 ### External Services (Third-Party Integrations)
 
-Third-party services (Supabase, Stripe, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method. See `app/core/supabase_client.py` for the pattern in use.
+Third-party services (Supabase, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method. See `app/core/supabase_client.py` for the pattern in use.
 
 ```python
-# app/core/stripe.py (example of adding a new integration)
-import stripe
+# app/core/cloudinary_client.py (example of adding a new integration)
+import cloudinary
 from app.core.settings import get_settings
 
 
-class StripeClient:
+class CloudinaryClient:
     def __init__(self):
         settings = get_settings()
-        stripe.api_key = settings.stripe_secret_key
-        self.stripe = stripe
-
-    def create_checkout_session(self, **kwargs):
-        return self.stripe.checkout.Session.create(**kwargs)
+        cloudinary.config(cloud_name=settings.cloudinary_cloud_name,
+                          api_key=settings.cloudinary_api_key,
+                          api_secret=settings.cloudinary_api_secret)
 ```
+
+### Payments
+
+Payments are **RevenueCat-first**: the mobile app talks to RevenueCat directly, and
+RevenueCat holds subscription state — nothing here mirrors it. Stripe, when needed,
+is wired through RevenueCat. This template ships no payment code; add server-side
+pieces (e.g. a RevenueCat webhook) only when a feature needs them.
 
 ### Authentication
 
@@ -183,7 +195,7 @@ uv run pytest
 
 ### Test Structure
 
-Tests live in `app/tests/`, one file per feature (`test_routes.py`, `test_auth_delete.py`, ...).
+Tests live in `app/tests/`, one file per feature (`test_routes.py`, `test_emails.py`, ...).
 
 ### Key Fixtures (see `app/tests/conftest.py`)
 
@@ -220,6 +232,10 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
 - Row Level Security (RLS) enabled on all tables
 - Automatic `updated_at` timestamps via triggers
 - Auth triggers sync users from `auth.users` to `public.users` (and delete them in tandem)
+- `delete_own_account()` — `SECURITY DEFINER`, no arguments, deletes only
+  `auth.uid()`, EXECUTE granted to `authenticated` only. The app calls it with
+  `supabase.rpc('delete_own_account')`. Follow the same shape for any future
+  privileged-but-self-scoped operation; never accept a user id as a parameter.
 
 ### Running Migrations
 

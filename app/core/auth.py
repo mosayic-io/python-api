@@ -20,16 +20,3 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(a
             detail="Invalid authentication credentials",
         )
 
-
-async def delete_auth_user(user_id: str) -> dict:
-    """Delete a user from Supabase Auth by user ID."""
-    try:
-        client = SupabaseClient()
-        supabase = await client.get_client()
-        await supabase.auth.admin.delete_user(user_id)
-        return {"deleted_user_id": user_id}
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete user: {exc}",
-        )

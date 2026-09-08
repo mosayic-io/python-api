@@ -14,6 +14,20 @@ The backend for the mobile app, in two halves:
   database: AI features, email, push, background work. Nothing in the fresh
   mobile app calls it. Testing uses **pytest**.
 
+## Production is not a place you run things
+
+This repo has a development copy (the Supabase that `supabase start` runs in
+Docker, and `uvicorn` on this machine) and a production deployment (the hosted
+Supabase project and Cloud Run). You may READ production in a limited sense —
+check whether an environment variable or secret exists, read a deployment's
+status or logs — and you may SET a secret when the user explicitly asks you to.
+You must NEVER run scripts, one-off commands, REPLs or SQL against the
+production database or the deployed API: no `psql`, no SQL editor, no secret
+key used from a dev machine, no `supabase db push`, no "just a quick SELECT".
+Schema changes reach production one way only — as migration files shipped by a
+release (see Shipping). If a task seems to need production data or a
+production query, stop and ask.
+
 ## Core Architecture
 
 ### Application Structure
@@ -237,15 +251,97 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
   `supabase.rpc('delete_own_account')`. Follow the same shape for any future
   privileged-but-self-scoped operation; never accept a user id as a parameter.
 
-### Running Migrations
+### Migrations — the rules
+
+Every database change — a table, a column, a policy, a SQL function, a storage
+bucket — is a migration file in `supabase/migrations/`. Nothing is ever clicked
+together in a dashboard.
+
+- **One NEW file per change. Never edit, rename or delete an existing
+  migration**: it has already run, here and possibly in production.
+- **Name it `<UTC timestamp>_<what>.sql` with a timestamp LATER than every file
+  already there**, e.g. `20260908143000_add_notes.sql`. A stamp that sorts
+  before an existing file runs first and takes the whole chain down.
+- Write plain Postgres the way the Supabase CLI applies it — no `psql`
+  meta-commands. Every new table gets RLS enabled and its policies in the same
+  file. Use `if not exists` / `on conflict do nothing` where a re-run is
+  plausible.
+- Privileged-but-self-scoped operations follow `delete_own_account()`:
+  `SECURITY DEFINER`, no arguments, acts only on `auth.uid()`, EXECUTE granted
+  to `authenticated` only. Never accept a user id as a parameter.
+
+### Supabase Storage is part of the schema
+
+A bucket is created in a migration, never in the dashboard: an INSERT into
+`storage.buckets` (columns: `id`, `name`, `public`, `file_size_limit`,
+`allowed_mime_types`; `on conflict (id) do nothing`) plus RLS policies on
+`storage.objects`. Convention: every file lives at a path whose first folder is
+the uploader's user id — `(storage.foldername(name))[1] = auth.uid()::text` —
+and signed-in users may insert / update / delete only inside their own folder
+of that bucket (`bucket_id = '…'` on every policy, and a policy name that
+includes the bucket so features never clash). Public buckets (avatars) get an
+anyone-can-select policy; private ones are read through signed URLs.
+
+**The storage schema belongs to Supabase.** Never `ALTER` a table in it, never
+`create` anything in it besides bucket rows and policies, and never `enable row
+level security` on `storage.objects` — it already is, and a hosted project
+refuses all of that with "must be owner". A migration that works locally and
+dies on the first release is the one failure to design out.
+
+`delete_own_account()` removes the user's rows but NOT their files in Storage —
+a feature that adds a bucket should extend it (its migration says where).
+
+### Applying migrations locally
 
 ```bash
-# Local
-supabase db push
-
-# View current status
-supabase status
+npx supabase migration up   # only the files the local database hasn't seen — keeps your test data
+npx supabase db reset       # everything from empty (seed.sql included) — the full proof
+npx supabase status         # what's running, and the local keys
 ```
+
+Then regenerate the mobile app's types from the live schema, from this folder:
+
+```bash
+npx supabase gen types typescript --local > ../<app>-mobile/src/types/database.ts
+```
+
+`supabase db push` is NOT for local work — it pushes to a *linked remote*
+project, i.e. production, and is exactly the thing the rule above forbids.
+
+## Shipping — a release is the deploy
+
+`.github/workflows/` holds two workflows, both `on: release: published`:
+
+- `supabase-deploy-migrations.yaml` applies every unapplied migration to the
+  production database (needs the `DATABASE_CONNECTION_STRING` repository secret).
+- `gcp-deploy.yaml` builds the container and deploys it to Cloud Run (needs
+  `GCLOUD_SERVICE_KEY`; the `--update-secrets` line in it is where a production
+  secret gets mounted from Secret Manager).
+
+Both self-skip, green, until their secret exists — a green run is not proof of a
+deploy. Publishing a GitHub release (`gh release create v0.1.0`, `v0.1.0` and
+`0.1.0` both fine) is the whole ceremony; there is no other path to production.
+
+## Secrets
+
+- `.env` is gitignored; `.env.example` is committed with every key blank. A new
+  secret is a typed field on `Settings`, a real value in `.env`, a blank line in
+  `.env.example`, and — for production — the same name in the project's Secret
+  Manager plus the `--update-secrets` line in `gcp-deploy.yaml`. Never
+  `os.environ` directly, never a key in a commit.
+- Third-party API keys (AI providers, email, payments) live HERE, never in the
+  mobile app: the phone calls this API, this API calls the provider.
+- Dependencies are managed with **uv**: `uv add <package>` (with the extra, e.g.
+  `uv add "pydantic-ai-slim[openai]"`), never `pip`, never editing `uv.lock` by
+  hand.
+
+## Before you call a change done
+
+- `uv run pytest` passes — write a test for every endpoint you add, with any
+  external call stubbed (pydantic-ai's `TestModel`, a mocked client) so the
+  suite never hits the network or spends money.
+- A new migration applies with `npx supabase migration up` and the app's
+  `database.ts` is regenerated.
 
 ## Quick Reference
 
@@ -254,6 +350,9 @@ supabase status
 | Install dependencies | `uv sync --all-groups` |
 | Run dev server | `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080` |
 | Run tests | `uv run pytest` |
-| Start local Supabase | `supabase start` |
-| Push migrations | `supabase db push` |
-| Build Docker | `docker build -t mosayic-api .` |
+| Start local Supabase | `npx supabase start` |
+| Apply new migrations locally | `npx supabase migration up` |
+| Rebuild the local database from empty | `npx supabase db reset` |
+| Regenerate the app's types | `npx supabase gen types typescript --local > ../<app>-mobile/src/types/database.ts` |
+| Ship to production | `gh release create v0.1.0` |
+| Build the container locally | `docker build -t api .` |

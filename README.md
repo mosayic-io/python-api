@@ -8,8 +8,10 @@ The backend for the React Native mobile app at Kealy Studio. It has two halves:
   the stores require and which runs as a Postgres function
   (`delete_own_account`) rather than on a server of your own.
 - **`app/`** — the Python (FastAPI) API for everything beyond that: AI
-  features, email, push, background work. Nothing in the fresh mobile app
-  calls it, so you can leave deploying it until a feature needs it.
+  features, email, push, background work. It also carries account deletion
+  as an endpoint (`DELETE /auth/users/me`) for apps that would rather route
+  it through the server. Nothing in the fresh mobile app calls the API, so
+  you can leave deploying it until a feature needs it.
 
 ## Tech Stack
 
@@ -62,6 +64,13 @@ await supabase.rpc('delete_own_account')
 executed by signed-in users. The `on_auth_user_deleted` trigger removes the
 `public.users` row, which cascades to `devices`. See the migration
 `20260905120000_delete_own_account.sql` for the full reasoning.
+
+The same deletion also exists as an API endpoint, `DELETE /auth/users/me`
+(`app/routes/auth_router.py`): the server deletes the caller with the
+service-role key. The mobile app ships both and one constant chooses —
+`ACCOUNT_DELETION` in its `src/lib/api.ts`, `'database'` by default,
+`'api'` to go through the server (which then has to be running, and deployed
+before the store).
 
 ## Python API Endpoints
 

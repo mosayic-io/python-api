@@ -9,7 +9,10 @@ The backend for the mobile app, in two halves:
 - **`supabase/`** — the PostgreSQL database: schema, RLS and SQL functions,
   shipped as migrations. Account deletion (an app-store requirement) is a
   Postgres function here, `delete_own_account()`, so the app is store-ready
-  before any server is deployed.
+  before any server is deployed. The API ALSO ships it as an endpoint
+  (`DELETE /auth/users/me`, `app/routes/auth_router.py`); the mobile app's
+  `ACCOUNT_DELETION` constant (`src/lib/api.ts`) picks one — the database
+  function by default.
 - **`app/`** — the **FastAPI** application for everything beyond the
   database: AI features, email, push, background work. Nothing in the fresh
   mobile app calls it. Testing uses **pytest**.
@@ -40,6 +43,7 @@ app/
 │   ├── settings.py          # Environment variables via Pydantic
 │   └── supabase_client.py   # Singleton async Supabase client
 ├── routes/
+│   ├── auth_router.py       # DELETE /auth/users/me — account deletion through the server (the app's second way; the database function is its default)
 │   └── email_router.py      # POST /emails/welcome (Supabase database webhook)
 ├── services/
 │   └── email.py             # Outgoing email via Resend — send_email(), EMAIL_ENABLED gate
@@ -248,7 +252,9 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
 - Auth triggers sync users from `auth.users` to `public.users` (and delete them in tandem)
 - `delete_own_account()` — `SECURITY DEFINER`, no arguments, deletes only
   `auth.uid()`, EXECUTE granted to `authenticated` only. The app calls it with
-  `supabase.rpc('delete_own_account')`. Follow the same shape for any future
+  `supabase.rpc('delete_own_account')` — or, with `ACCOUNT_DELETION = 'api'`
+  in its `src/lib/api.ts`, `DELETE /auth/users/me` on this API, which does the
+  same deletion with the service-role key. Follow the same shape for any future
   privileged-but-self-scoped operation; never accept a user id as a parameter.
 
 ### Migrations — the rules

@@ -256,6 +256,11 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
   in its `src/lib/api.ts`, `DELETE /auth/users/me` on this API, which does the
   same deletion with the service-role key. Follow the same shape for any future
   privileged-but-self-scoped operation; never accept a user id as a parameter.
+- `keepalive()` — `STABLE`, `SECURITY INVOKER`, no arguments, reads no table,
+  returns `now()`; EXECUTE granted to `anon` + `authenticated`. It's the
+  harmless query a scheduled ping calls (`GET /rest/v1/rpc/keepalive` with the
+  `apikey` header) so Supabase never pauses a free project for inactivity.
+  Keep it table-free: it's open to anyone holding the public key.
 
 ### Migrations — the rules
 

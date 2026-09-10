@@ -41,7 +41,7 @@ python-api/
 │   ├── __init__.py            # FastAPI app initialization
 │   └── main.py                # API endpoints and route registration
 ├── supabase/
-│   ├── migrations/            # Database migrations (schema, RLS, delete_own_account)
+│   ├── migrations/            # Database migrations (schema, RLS, delete_own_account, keepalive)
 │   └── config.toml            # Local Supabase configuration
 ├── .github/workflows/         # CI/CD workflows
 ├── Dockerfile
@@ -128,6 +128,22 @@ Supabase migrations are in `supabase/migrations/`. Current schema includes:
 
 - `users` - User profiles synced with Supabase Auth
 - `devices` - A user may have many devices
+
+### Keeping a free project awake
+
+Supabase pauses a free-plan project after about a week without database
+activity, and only a click in its dashboard brings it back. The migration
+`20260910170000_keepalive.sql` adds `keepalive()`, a function that reads
+nothing and returns the database's current time. Anything that pings on a
+schedule can call it with just the publishable key:
+
+```bash
+curl https://<project-ref>.supabase.co/rest/v1/rpc/keepalive \
+  -H "apikey: <your publishable key>"
+```
+
+It needs no API deploy. Send the key as the `apikey` header: the local stack
+reads a `?apikey=` query parameter as a function argument.
 
 
 

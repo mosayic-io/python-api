@@ -130,6 +130,14 @@ runs on it:
 - **Database**: migrations are pushed to production — this alone makes the app store-ready, account deletion included (see `.github/workflows/supabase-deploy-migrations.yaml`)
 - **API**: the code is deployed to Google Cloud Run (see `.github/workflows/gcp-deploy.yaml`) — needed only once a feature calls it
 
+A third workflow runs on its own clock rather than on releases: every night
+`.github/workflows/scheduled-backups.yaml` dumps the production database into
+a Google Cloud Storage bucket you own (the free Supabase tier keeps no backups
+of its own). It reuses the deploy workflow's `github-deployer` key and the
+migrations workflow's connection string, so set up automatic deploys first;
+the bucket and two `env:` values are its one-time setup, documented in its
+header.
+
 The API workflow needs a one-time setup, documented in its own header: fill
 in the `env:` block (service name, region, Supabase URL), then create a
 `github-deployer` service account and hand its key to GitHub as the

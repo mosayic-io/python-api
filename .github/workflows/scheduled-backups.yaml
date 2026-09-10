@@ -1,81 +1,134 @@
 ###################################
 #
-# GitHub Actions Workflow File - Supabase database Backups
+# GitHub Actions Workflow File - Nightly database backup to Google Cloud Storage
 #
-# This workflow backs up the Supabase database (roles, schema, and data) to
-# Google Cloud Storage. It can be triggered manually or on a schedule.
+# Every night this dumps your production Supabase database — roles, schema
+# and data — with the Supabase CLI and uploads the three files to a
+# date-stamped folder in a Google Cloud Storage bucket you own. Supabase's
+# free tier keeps no backups of its own; this is yours.
 #
-# NOTE: THIS WORKFLOW ISN'T OFFICIALLY SUPPORTED. YOU CAN USE IT IF YOU
-# FIGURE OUT HOW TO SET UP THE REQUIRED GCP PERMISSIONS AND SECRETS YOURSELF (GCP STORAGE
-# AND GITHUB ACTIONS SECRETS). OTHERWISE, IGNORE IT FOR NOW UNTIL THE FEATURE BECOMES
-# SUPPORTED IN A MORE USER-FRIENDLY WAY. NOTE THAT IF YOU'RE USING THE PAID VERSION OF
-# SUPABASE, THEY PROVIDE AUTOMATIC BACKUPS AS PART OF THE SERVICE, SO YOU WON'T NEED THIS.
+# Nothing is ever overwritten. Each night lands in daily/, Sundays also in
+# weekly/, the 1st of the month also in monthly/ — and a lifecycle rule on
+# the bucket prunes each folder on its own clock (about a week of nightly
+# copies, a month of Sundays, three months of firsts), so if last night's
+# dump is bad there is always an older one to fall back on.
 #
-# Get in touch with John if you're interested in this feature.
+# Like the deploy workflow, it skips itself quietly (a green tick, nothing
+# backed up) until it is set up. It needs no new secret: the dump reads the
+# same DATABASE_CONNECTION_STRING the migrations workflow uses, and the
+# upload runs as the same github-deployer account the deploy workflow uses
+# (its key is GCLOUD_SERVICE_KEY; roles/storage.admin, which it already
+# holds, covers writing the bucket). So: set up automatic deploys first,
+# then this.
 #
-# Requirements:
-# - SUPABASE_DB_URL: Database URL (e.g., postgresql://postgres:[PASSWORD]@db.<ref>.supabase.co:5432/postgres)
-# - FIREBASE_SERVICE_CREDENTIALS: Google Cloud service account credentials JSON
-# - GCP_PROJECT_ID: Google Cloud project ID
-# - GCP_BUCKET: Google Cloud Storage bucket name for storing backups
+# One-time setup — Mosayic's "Back up your database" card does all of it in
+# one click. By hand (the course walks through this in "The Production
+# Backend"), from the -api folder:
 #
-# This workflow is currently disabled. To enable scheduled backups, uncomment
-# the 'schedule' section and set the branch from 'none' to 'main'.
+#   PROJECT=<your-gcp-project-id>
+#   BUCKET=$PROJECT-db-backups
+#
+#   # 1. A private bucket, in the region your API runs in
+#   gcloud storage buckets create gs://$BUCKET \
+#     --project=$PROJECT --location=us-east1 --uniform-bucket-level-access
+#
+#   # 2. Tiered retention — prune each folder on its own clock (the three
+#   #    `age` numbers are the only knobs)
+#   cat > ../lifecycle.json <<'JSON'
+#   { "rule": [
+#     { "action": { "type": "Delete" }, "condition": { "age": 8,   "matchesPrefix": ["daily/"]   } },
+#     { "action": { "type": "Delete" }, "condition": { "age": 35,  "matchesPrefix": ["weekly/"]  } },
+#     { "action": { "type": "Delete" }, "condition": { "age": 100, "matchesPrefix": ["monthly/"] } }
+#   ] }
+#   JSON
+#   gcloud storage buckets update gs://$BUCKET --lifecycle-file=../lifecycle.json
+#
+#   # 3. Fill in the two values in the `env:` block below, commit, push.
+#
+# Test it before the first night: Actions tab → this workflow → Run workflow.
+#
+# Two things worth knowing:
+# - GitHub switches scheduled workflows off after 60 days without a push to
+#   the repo. If the Actions tab shows this one disabled, one click turns it
+#   back on (Mosayic's card notices and offers the same).
+# - On Supabase Pro? Supabase keeps daily backups for you, so this one can
+#   retire: Actions tab → this workflow → "…" → Disable workflow, or the
+#   switch on Mosayic's card. Nothing else changes.
+#
+# To restore: create a fresh Supabase project and feed the three files to
+# psql against its connection string in order — roles.sql, then schema.sql,
+# then data.sql. Supabase's "Backup and restore using the CLI" guide has the
+# exact command.
 #
 ###################################
 
-name: supabase-backup-to-gcp
+name: Nightly database backup
 
 on:
-  push:
-    branches: [ none ]  # set this to main
-  workflow_dispatch:
-  # schedule:             # Uncomment this to start running it everyday
-  #   - cron: '0 1 * * *' # Runs every day at midnight
+  schedule:
+    - cron: '27 3 * * *'   # 03:27 UTC nightly — off the hour, because GitHub's
+                           # on-the-hour queue is congested and delays runs
+  workflow_dispatch:       # the manual "Run workflow" button
+
+env:
+  # Your Google Cloud project id (the one your API deploys to)
+  GCP_PROJECT_ID: your-gcp-project-id
+  # The bucket the dumps go to — convention: <project-id>-db-backups
+  GCP_BUCKET: your-gcp-project-id-db-backups
+  # Flips to true once both secrets exist; until then every step skips quietly.
+  CONFIGURED: ${{ secrets.DATABASE_CONNECTION_STRING != '' && secrets.GCLOUD_SERVICE_KEY != '' }}
 
 jobs:
-  run_db_backup:
+  backup:
     runs-on: ubuntu-latest
-    env:
-      supabase_db_url: ${{ secrets.SUPABASE_DB_URL }}  # e.g., postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres
+    concurrency: database-backup   # a manual run never overlaps the nightly one
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.head_ref }}
+      - name: Backups not configured yet — skipping
+        if: env.CONFIGURED != 'true'
+        run: echo "DATABASE_CONNECTION_STRING or GCLOUD_SERVICE_KEY is not set, so there is nowhere to back up from or to. This is fine — see the one-time setup in this workflow's header."
 
       - name: Set up Supabase CLI
+        if: env.CONFIGURED == 'true'
         uses: supabase/setup-cli@v3
         with:
           version: latest
 
-      - name: Backup roles
-        run: supabase db dump --db-url "$supabase_db_url" -f roles.sql --role-only
+      - name: Dump roles, schema and data
+        if: env.CONFIGURED == 'true'
+        env:
+          DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+        run: |
+          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f roles.sql  --role-only
+          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f schema.sql
+          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f data.sql   --data-only
 
-      - name: Backup schema
-        run: supabase db dump --db-url "$supabase_db_url" -f schema.sql
-
-      - name: Backup data
-        run: supabase db dump --db-url "$supabase_db_url" -f data.sql --data-only
-
-      # Authenticate to Google Cloud using a service account key stored in GitHub Secrets.
       - name: Authenticate to Google Cloud
+        if: env.CONFIGURED == 'true'
         uses: google-github-actions/auth@v3
         with:
-          credentials_json: '${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}'
+          credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
 
-      # Set up gcloud and install gsutil.
       - name: Set up Google Cloud SDK
+        if: env.CONFIGURED == 'true'
         uses: google-github-actions/setup-gcloud@v3
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: 'gsutil'
+          project_id: ${{ env.GCP_PROJECT_ID }}
 
-      # Upload the backup files to the designated GCP Cloud Storage bucket.
-      - name: Upload backups to GCP Cloud Storage
-        env:
-          GCP_BUCKET: ${{ secrets.GCP_BUCKET }}
+      - name: Upload the dated backup to the daily / weekly / monthly tiers
+        if: env.CONFIGURED == 'true'
         run: |
-          gsutil cp roles.sql gs://$GCP_BUCKET/backups/roles.sql
-          gsutil cp schema.sql gs://$GCP_BUCKET/backups/schema.sql
-          gsutil cp data.sql gs://$GCP_BUCKET/backups/data.sql
+          DATE="$(date -u +%F)"   # 2026-09-10 (UTC)
+          DOW="$(date -u +%u)"    # day of week, 1=Mon .. 7=Sun
+          DOM="$(date -u +%d)"    # day of month, 01..31
+
+          # Always the daily tier; add weekly on Sundays and monthly on the 1st.
+          # The lifecycle rule on each folder prunes it (see this file's header).
+          tiers="daily"
+          if [ "$DOW" = "7" ];  then tiers="$tiers weekly";  fi
+          if [ "$DOM" = "01" ]; then tiers="$tiers monthly"; fi
+
+          for tier in $tiers; do
+            gcloud storage cp roles.sql schema.sql data.sql "gs://$GCP_BUCKET/$tier/$DATE/"
+          done
+          echo "Backed up $DATE to: $tiers"

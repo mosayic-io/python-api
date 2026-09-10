@@ -310,7 +310,7 @@ project, i.e. production, and is exactly the thing the rule above forbids.
 
 ## Shipping — a release is the deploy
 
-`.github/workflows/` holds two workflows, both `on: release: published`:
+`.github/workflows/` holds three workflows. Two run `on: release: published`:
 
 - `supabase-deploy-migrations.yaml` applies every unapplied migration to the
   production database (needs the `DATABASE_CONNECTION_STRING` repository secret).
@@ -318,9 +318,23 @@ project, i.e. production, and is exactly the thing the rule above forbids.
   `GCLOUD_SERVICE_KEY`; the `--update-secrets` line in it is where a production
   secret gets mounted from Secret Manager).
 
-Both self-skip, green, until their secret exists — a green run is not proof of a
-deploy. Publishing a GitHub release (`gh release create v0.1.0`, `v0.1.0` and
-`0.1.0` both fine) is the whole ceremony; there is no other path to production.
+The third, `scheduled-backups.yaml`, runs on a nightly cron (03:27 UTC) and
+dumps the production database — roles, schema, data — into a date-stamped
+folder of a Google Cloud Storage bucket, daily/weekly/monthly tiers pruned by
+a lifecycle rule on the bucket. It needs NO new secret: it reads the same
+`DATABASE_CONNECTION_STRING` and uploads as the same `github-deployer` account
+(`GCLOUD_SERVICE_KEY`, whose `roles/storage.admin` covers the bucket) — so
+automatic deploys are set up first, then backups. The bucket, its retention
+rule and the two values in the workflow's `env:` block are the one-time setup
+(header comment; Mosayic's "Back up your database" card does it in one click).
+Supabase's free tier keeps no backups, so this is the only copy; on Supabase
+Pro it is redundant and can be disabled from the Actions tab. GitHub disables
+scheduled workflows after 60 days without a push — re-enable from the same tab.
+
+All three self-skip, green, until their secrets exist — a green run is not proof
+of a deploy or a backup. Publishing a GitHub release (`gh release create v0.1.0`,
+`v0.1.0` and `0.1.0` both fine) is the whole deploy ceremony; there is no other
+path to production.
 
 ## Secrets
 

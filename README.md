@@ -61,9 +61,10 @@ await supabase.rpc('delete_own_account')
 
 `delete_own_account()` is `SECURITY DEFINER`, takes no arguments, deletes only
 `auth.uid()` (the caller's own id from their session token), and may only be
-executed by signed-in users. The `on_auth_user_deleted` trigger removes the
-`public.users` row, which cascades to `devices`. See the migration
-`20260905120000_delete_own_account.sql` for the full reasoning.
+executed by signed-in users. Deleting the `auth.users` row cascades to the
+`public.users` row (the foreign key added in
+`20260917200000_users_follow_auth_users.sql`), and on to `devices`. See the
+migration `20260905120000_delete_own_account.sql` for the full reasoning.
 
 The same deletion also exists as an API endpoint, `DELETE /auth/users/me`
 (`app/routes/auth_router.py`): the server deletes the caller with the

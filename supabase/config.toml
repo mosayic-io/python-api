@@ -119,7 +119,7 @@ enabled = true
 # in emails.
 site_url = "http://localhost:5173"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
+additional_redirect_urls = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://localhost:4321/reset-password", "http://localhost:4321/email-confirmed"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # Path to JWT signing key. DO NOT commit your signing keys file to git.
@@ -170,6 +170,11 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = false
 # If enabled, users need to confirm their email address before signing in.
+# Ships OFF, and the mobile app is already built for ON: flip this (then
+# `npx supabase stop && npx supabase start`) and every local sign-up waits
+# for the confirmation email, which Mailpit catches at http://127.0.0.1:54324.
+# The hosted project has the same switch ("Confirm email" under
+# Authentication → Providers → Email); keep the two in agreement.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
@@ -190,7 +195,17 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
+# The two emails the app's auth flow sends, as the app rather than as
+# Supabase. Put your app's name in each file's header (the hosted project
+# gets the same subject + HTML under Authentication → Email Templates).
+[auth.email.template.confirmation]
+subject = "Confirm your email address"
+content_path = "./supabase/templates/confirmation.html"
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+# Uncomment to customize another template
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"

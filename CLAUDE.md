@@ -239,6 +239,15 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
 
 - Local config: `supabase/config.toml`
 - Migrations: `supabase/migrations/`
+- Auth emails: `supabase/templates/confirmation.html` and `recovery.html`,
+  wired in `config.toml` under `[auth.email.template.*]`. Put the app's name
+  in each header. **Email confirmation ships OFF** (`enable_confirmations =
+  false`); the mobile app is already built for ON (its verify-email screen,
+  the links site's `/email-confirmed` page), so switching it on is the
+  config flag locally plus the hosted project's "Confirm email" toggle —
+  keep the two in agreement. Locally, Mailpit at http://127.0.0.1:54324
+  catches every auth email. The hosted project's templates are set under
+  Authentication → Email Templates (Mosayic's email card does it for you).
 
 ### Current Schema
 

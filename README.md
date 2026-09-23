@@ -79,7 +79,7 @@ before the store).
 |--------|------|------|-------------|
 | GET | `/` | Public | Welcome message |
 | GET | `/protected` | Bearer JWT | Example authenticated route |
-| POST | `/emails/welcome` | X-Webhook-Secret header | Send the welcome email — intended for a Supabase database webhook on `public.users` inserts |
+| POST | `/emails/welcome` | X-Webhook-Secret header | Send the welcome email — intended for a Supabase database webhook on `public.users` inserts (or, once email confirmation is on, a trigger on the moment `auth.users.email_confirmed_at` is set, so the welcome never beats the confirmation) |
 
 Interactive docs are served at `/docs` (disabled when `APP_ENV=production`).
 

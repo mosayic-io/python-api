@@ -21,3 +21,12 @@ test = [
     "pytest-asyncio~=1.2",
     "pytest-mock~=3.15",
 ]
+
+[tool.uv]
+# cryptography 49 stopped publishing wheels for Intel Macs (arm64 only), so on
+# one `uv sync` tries to compile it from source and fails without a Rust
+# toolchain. 48 is the last release with a universal2 wheel; every other
+# platform still gets the newest.
+constraint-dependencies = [
+    "cryptography<49 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]

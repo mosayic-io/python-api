@@ -5,28 +5,30 @@ description = "API for the mobile app"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "fastapi~=0.119",
+    "fastapi~=0.148",
     "httpx~=0.28",
-    "pydantic~=2.12",
-    "pydantic-settings~=2.6",
-    "supabase~=2.22",
-    "uvicorn~=0.37"
+    "pydantic~=2.14",
+    "pydantic-settings~=2.15",
+    "supabase~=2.33",
+    "uvicorn~=0.54"
 ]
 
 [dependency-groups]
 dev = []
 
 test = [
-    "pytest~=8.4",
-    "pytest-asyncio~=1.2",
-    "pytest-mock~=3.15",
+    "pytest~=9.1",
+    "pytest-asyncio~=1.4",
+    "pytest-mock~=3.17",
 ]
 
 [tool.uv]
 # cryptography 49 stopped publishing wheels for Intel Macs (arm64 only), so on
 # one `uv sync` tries to compile it from source and fails without a Rust
 # toolchain. 48 is the last release with a universal2 wheel; every other
-# platform still gets the newest.
+# platform still gets the newest — the second line says so, or uv settles
+# every platform on 48 to avoid forking the lock.
 constraint-dependencies = [
     "cryptography<49 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "cryptography>=50 ; sys_platform != 'darwin' or platform_machine != 'x86_64'",
 ]

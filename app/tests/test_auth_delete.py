@@ -32,3 +32,20 @@ async def test_delete_current_user_requires_auth(async_client):
     response = await async_client.delete("/auth/users/me")
 
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_delete_failure_keeps_supabase_error_private(async_client, mocker):
+    supabase = mocker.Mock()
+    supabase.auth.admin.delete_user = AsyncMock(side_effect=RuntimeError("db at 10.0.0.5 refused"))
+    mocker.patch(f"{SUPABASE_CLIENT_PATH}.get_client", new=AsyncMock(return_value=supabase))
+
+    async def override_current_user():
+        return SimpleNamespace(id="123")
+
+    fastapi_app.dependency_overrides[get_current_user] = override_current_user
+
+    response = await async_client.delete("/auth/users/me")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to delete user"}

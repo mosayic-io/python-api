@@ -41,6 +41,15 @@ async def test_welcome_refuses_wrong_secret(async_client, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_welcome_refuses_missing_header(async_client, monkeypatch):
+    monkeypatch.setenv("EMAIL_WEBHOOK_SECRET", "test-secret")
+
+    response = await async_client.post(WELCOME_PATH, json=PAYLOAD)
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_welcome_skips_sending_while_email_disabled(async_client, monkeypatch):
     monkeypatch.setenv("EMAIL_WEBHOOK_SECRET", "test-secret")
     monkeypatch.setenv("EMAIL_ENABLED", "false")

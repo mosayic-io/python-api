@@ -27,10 +27,11 @@ app = FastAPI(
 
 # CORS only applies to browser clients (not the mobile app).
 # TODO: If you add a web frontend, replace "*" with its explicit origins.
+# Auth is a Bearer header, never a cookie, so credentials mode stays off.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

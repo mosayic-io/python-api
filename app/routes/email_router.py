@@ -14,6 +14,8 @@ confirmation instead: a trigger on auth.users for the moment
 email_confirmed_at is first set, posting the same `{record: {email,
 display_name}}` shape — never the auth.users row itself.
 """
+import hmac
+
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
@@ -47,7 +49,11 @@ async def send_welcome_email(
     x_webhook_secret: str | None = Header(default=None),
 ) -> dict:
     settings = get_settings()
-    if not settings.email_webhook_secret or x_webhook_secret != settings.email_webhook_secret:
+    # compare_digest takes the same time however much of the secret matches,
+    # so the header can't be guessed one character at a time.
+    if not settings.email_webhook_secret or not hmac.compare_digest(
+        (x_webhook_secret or "").encode(), settings.email_webhook_secret.encode()
+    ):
         raise HTTPException(status_code=401, detail="Missing or invalid webhook secret")
 
     if not payload.record.email:

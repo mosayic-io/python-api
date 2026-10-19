@@ -2,7 +2,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from supabase_auth.types import User
 
+from app.core.logger import get_logger
 from app.core.supabase_client import SupabaseClient
+
+logger = get_logger(__name__)
 
 auth_scheme = HTTPBearer()
 
@@ -21,7 +24,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(a
         )
 
 
-
 async def delete_auth_user(user_id: str) -> dict:
     """Delete a user from Supabase Auth by user ID (service role).
 
@@ -33,8 +35,11 @@ async def delete_auth_user(user_id: str) -> dict:
         supabase = await client.get_client()
         await supabase.auth.admin.delete_user(user_id)
         return {"deleted_user_id": user_id}
-    except Exception as exc:
+    except Exception:
+        # The details go to the logs, not to the caller: Supabase's error
+        # text can describe the project's internals.
+        logger.exception("Failed to delete user %s", user_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete user: {exc}",
+            detail="Failed to delete user",
         )

@@ -39,4 +39,6 @@ jobs:
         DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
       run: |
         test -d supabase/migrations || { echo "No supabase/migrations directory"; exit 1; }
-        supabase db push --db-url "$DATABASE_CONNECTION_STRING"
+        # --yes: Supabase CLI 3 asks before changing a hosted database, and a CI
+        # run can't answer, so without it nothing is applied (2026-11-03).
+        supabase db push --db-url "$DATABASE_CONNECTION_STRING" --yes

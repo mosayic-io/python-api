@@ -99,9 +99,9 @@ jobs:
         env:
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
         run: |
-          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f roles.sql  --role-only
-          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f schema.sql
-          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f data.sql   --data-only
+          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f roles.sql  --role-only --yes
+          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f schema.sql --yes
+          supabase db dump --db-url "$DATABASE_CONNECTION_STRING" -f data.sql   --data-only --yes
 
       - name: Authenticate to Google Cloud
         if: env.CONFIGURED == 'true'

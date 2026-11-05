@@ -258,7 +258,8 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
 **Key features:**
 - Row Level Security (RLS) enabled on all tables
 - Automatic `updated_at` timestamps via triggers
-- Auth triggers sync users from `auth.users` to `public.users` (and delete them in tandem)
+- An auth trigger creates the `public.users` row for each new `auth.users` row; a foreign key (`ON DELETE CASCADE`) removes it with the account
+- Two migrations to start: `20260101120000_initial_schema.sql` (tables, keys, RLS, grants, triggers) and `20260101120100_app_functions.sql` (`delete_own_account()`, `keepalive()`). New migrations get a timestamp later than both
 - `delete_own_account()` — `SECURITY DEFINER`, no arguments, deletes only
   `auth.uid()`, EXECUTE granted to `authenticated` only. The app calls it with
   `supabase.rpc('delete_own_account')` — or, with `ACCOUNT_DELETION = 'api'`

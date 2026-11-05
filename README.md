@@ -62,9 +62,9 @@ await supabase.rpc('delete_own_account')
 `delete_own_account()` is `SECURITY DEFINER`, takes no arguments, deletes only
 `auth.uid()` (the caller's own id from their session token), and may only be
 executed by signed-in users. Deleting the `auth.users` row cascades to the
-`public.users` row (the foreign key added in
-`20260917200000_users_follow_auth_users.sql`), and on to `devices`. See the
-migration `20260905120000_delete_own_account.sql` for the full reasoning.
+`public.users` row (the foreign key in `20260101120000_initial_schema.sql`),
+and on to `devices`. See `20260101120100_app_functions.sql` for the full
+reasoning.
 
 The same deletion also exists as an API endpoint, `DELETE /auth/users/me`
 (`app/routes/auth_router.py`): the server deletes the caller with the
@@ -125,7 +125,9 @@ uv run pytest
 
 ## Database
 
-Supabase migrations are in `supabase/migrations/`. Current schema includes:
+Supabase migrations are in `supabase/migrations/`, two to start with: the
+schema (`20260101120000_initial_schema.sql`) and the functions the app calls
+(`20260101120100_app_functions.sql`). Current schema includes:
 
 - `users` - User profiles synced with Supabase Auth
 - `devices` - A user may have many devices
@@ -134,7 +136,7 @@ Supabase migrations are in `supabase/migrations/`. Current schema includes:
 
 Supabase pauses a free-plan project after about a week without database
 activity, and only a click in its dashboard brings it back. The migration
-`20260910170000_keepalive.sql` adds `keepalive()`, a function that reads
+`20260101120100_app_functions.sql` adds `keepalive()`, a function that reads
 nothing and returns the database's current time. Anything that pings on a
 schedule can call it with just the publishable key:
 

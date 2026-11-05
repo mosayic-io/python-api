@@ -28,6 +28,15 @@ CREATE TABLE public.devices (
 CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id);
 ALTER TABLE public.users ADD CONSTRAINT users_pkey PRIMARY KEY USING INDEX users_pkey;
 
+-- A profile row belongs to its account: `public.users.id` IS the
+-- `auth.users` id, so the row goes when the account goes (and on to
+-- `devices`), and no profile can exist for an account that doesn't.
+ALTER TABLE public.users
+    ADD CONSTRAINT users_auth_user_fkey
+    FOREIGN KEY (id)
+    REFERENCES auth.users(id)
+    ON DELETE CASCADE;
+
 CREATE UNIQUE INDEX devices_pkey ON public.devices USING btree (id);
 ALTER TABLE public.devices ADD CONSTRAINT devices_pkey PRIMARY KEY USING INDEX devices_pkey;
 
@@ -150,17 +159,6 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.handle_deleted_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $function$
-BEGIN
-    DELETE FROM public.users WHERE id = OLD.id;
-    RETURN OLD;
-END;
-$function$;
-
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -179,11 +177,6 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_new_user();
-
-CREATE TRIGGER on_auth_user_deleted
-    AFTER DELETE ON auth.users
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_deleted_user();
 
 CREATE TRIGGER on_users_updated
     BEFORE UPDATE ON public.users

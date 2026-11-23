@@ -8,9 +8,9 @@ The backend for the React Native mobile app at Kealy Studio. It has two halves:
   the stores require and which runs as a Postgres function
   (`delete_own_account`) rather than on a server of your own.
 - **`app/`** — the Python (FastAPI) API for everything beyond that: AI
-  features, email, push, background work. It also carries account deletion
+  features, email, push, background work. It also offers account deletion
   as an endpoint (`DELETE /auth/users/me`) for apps that would rather route
-  it through the server. Nothing in the fresh mobile app calls the API, so
+  it through the server; the endpoint calls the same database function. Nothing in the fresh mobile app calls the API, so
   you can leave deploying it until a feature needs it.
 
 ## Tech Stack
@@ -27,19 +27,24 @@ The backend for the React Native mobile app at Kealy Studio. It has two halves:
 python-api/
 ├── app/
 │   ├── core/
-│   │   ├── auth.py            # JWT verification dependency + auth helpers
-│   │   ├── logger.py          # Colored console logger
-│   │   ├── settings.py        # Environment configuration (Pydantic)
-│   │   └── supabase_client.py # Singleton async Supabase client
+│   │   ├── auth.py                 # get_current_user and the other auth dependencies
+│   │   ├── logger.py               # Colored console logger
+│   │   ├── settings.py             # Environment configuration (Pydantic)
+│   │   ├── supabase_auth_client.py # SupabaseAuth: verify a session token, delete the caller's account
+│   │   └── webhooks.py             # Shared-secret check for webhook routes
 │   ├── routes/
-│   │   └── email_router.py    # Welcome email (Supabase database webhook)
+│   │   ├── auth_router.py          # Account deletion (calls delete_own_account as the caller)
+│   │   ├── demo_router.py          # The public and protected example routes
+│   │   └── email_router.py         # Welcome email (Supabase database webhook)
 │   ├── services/
-│   │   └── email.py           # Outgoing email via Resend (EMAIL_ENABLED gate)
+│   │   ├── account.py              # Account deletion's adapter over the database function
+│   │   └── email.py                # Outgoing email via Resend (EMAIL_ENABLED gate), the welcome email
 │   ├── tests/
-│   │   ├── conftest.py        # pytest fixtures
-│   │   └── test_*.py          # Endpoint tests
-│   ├── __init__.py            # FastAPI app initialization
-│   └── main.py                # API endpoints and route registration
+│   │   ├── conftest.py             # pytest fixtures (a fresh app per test)
+│   │   ├── fakes.py                # In-memory Supabase Auth for tests
+│   │   └── test_*.py               # Endpoint and module tests
+│   ├── factory.py                  # create_app(): lifespan, CORS, docs, routers
+│   └── main.py                     # app = create_app(), served as app.main:app
 ├── supabase/
 │   ├── migrations/            # Database migrations (schema, RLS, delete_own_account, keepalive)
 │   └── config.toml            # Local Supabase configuration
@@ -66,9 +71,11 @@ executed by signed-in users. Deleting the `auth.users` row cascades to the
 and on to `devices`. See `20260101120100_app_functions.sql` for the full
 reasoning.
 
-The same deletion also exists as an API endpoint, `DELETE /auth/users/me`
-(`app/routes/auth_router.py`): the server deletes the caller with the
-service-role key. The mobile app ships both and one constant chooses —
+The same function is also reachable through the API, `DELETE /auth/users/me`
+(`app/routes/auth_router.py`): the server calls `delete_own_account()` as
+the caller, with their own session token, so there is one implementation and
+whatever you add to the function happens on both paths. The mobile app ships
+both doors and one constant chooses —
 `ACCOUNT_DELETION` in its `src/lib/api.ts`, `'database'` by default,
 `'api'` to go through the server (which then has to be running, and deployed
 before the store).
@@ -79,6 +86,7 @@ before the store).
 |--------|------|------|-------------|
 | GET | `/` | Public | Welcome message |
 | GET | `/protected` | Bearer JWT | Example authenticated route |
+| DELETE | `/auth/users/me` | Bearer JWT | Delete the caller's own account, through `delete_own_account()` |
 | POST | `/emails/welcome` | X-Webhook-Secret header | Send the welcome email — intended for a Supabase database webhook on `public.users` inserts (or, once email confirmation is on, a trigger on the moment `auth.users.email_confirmed_at` is set, so the welcome never beats the confirmation) |
 
 Interactive docs are served at `/docs` (disabled when `APP_ENV=production`).
@@ -120,6 +128,11 @@ That's everything the fresh app needs. The Python API, for when you add to it:
 ```bash
 uv run pytest
 ```
+
+One test, marked `integration`, runs account deletion end to end against the
+local Supabase stack. A plain `uv run pytest` leaves it out; run it with
+`uv run pytest -m integration` once `supabase start` is up. It skips itself
+unless `SUPABASE_URL` points at 127.0.0.1 or localhost and the stack answers.
 
 
 

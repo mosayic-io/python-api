@@ -9,10 +9,11 @@ The backend for the mobile app, in two halves:
 - **`supabase/`** — the PostgreSQL database: schema, RLS and SQL functions,
   shipped as migrations. Account deletion (an app-store requirement) is a
   Postgres function here, `delete_own_account()`, so the app is store-ready
-  before any server is deployed. The API ALSO ships it as an endpoint
-  (`DELETE /auth/users/me`, `app/routes/auth_router.py`); the mobile app's
-  `ACCOUNT_DELETION` constant (`src/lib/api.ts`) picks one — the database
-  function by default.
+  before any server is deployed. It is the ONE implementation: the API's
+  endpoint (`DELETE /auth/users/me`, `app/routes/auth_router.py`) calls the
+  same function as the signed-in caller. The mobile app's `ACCOUNT_DELETION`
+  constant (`src/lib/api.ts`) picks the door — the database function
+  directly by default.
 - **`app/`** — the **FastAPI** application for everything beyond the
   database: AI features, email, push, background work. Nothing in the fresh
   mobile app calls it. Testing uses **pytest**.
@@ -38,20 +39,24 @@ production query, stop and ask.
 ```
 app/
 ├── core/
-│   ├── auth.py              # JWT verification dependency + auth helpers
-│   ├── logger.py            # Colored console logger
-│   ├── settings.py          # Environment variables via Pydantic
-│   └── supabase_client.py   # Singleton async Supabase client
+│   ├── auth.py                  # get_current_user / get_caller / get_auth dependencies (401 bad token, 503 outage)
+│   ├── logger.py                # Colored console logger
+│   ├── settings.py              # Environment variables via Pydantic
+│   ├── supabase_auth_client.py  # SupabaseAuth — current_user(token), delete_own_account(token), and its error modes
+│   └── webhooks.py              # verified_webhook(secret_getter) — the X-Webhook-Secret check for webhook routes
 ├── routes/
-│   ├── auth_router.py       # DELETE /auth/users/me — account deletion through the server (the app's second way; the database function is its default)
-│   └── email_router.py      # POST /emails/welcome (Supabase database webhook)
+│   ├── auth_router.py           # DELETE /auth/users/me — calls delete_own_account() as the caller
+│   ├── demo_router.py           # GET / and GET /protected — the two example routes
+│   └── email_router.py          # POST /emails/welcome (Supabase database webhook)
 ├── services/
-│   └── email.py             # Outgoing email via Resend — send_email(), EMAIL_ENABLED gate
+│   ├── account.py               # delete_account() — the endpoint's adapter over the database function
+│   └── email.py                 # Outgoing email via Resend — send_email(), send_welcome_email(), EMAIL_ENABLED gate
 ├── tests/
-│   ├── conftest.py          # Shared fixtures (app, async_client)
-│   └── test_*.py            # Endpoint tests
-├── __init__.py              # FastAPI app initialization with lifespan and CORS
-└── main.py                  # API endpoints and route registration
+│   ├── conftest.py              # Shared fixtures (fake_auth, app, async_client)
+│   ├── fakes.py                 # FakeSupabaseAuth — the in-memory stand-in for SupabaseAuth
+│   └── test_*.py                # Endpoint and module tests
+├── factory.py                   # create_app(settings=None) — lifespan, CORS, docs toggle, every router
+└── main.py                      # app = create_app(), what uvicorn serves as app.main:app
 ```
 
 **Key principles:**
@@ -61,6 +66,9 @@ app/
   by `EMAIL_ENABLED`) is the pattern to follow
 - **Core third-party services (`app/core/`)**: Class-based wrappers for external APIs
   (Supabase, Cloudinary, etc.) with initialization and API key loading in `__init__`
+- **Assembly (`app/factory.py`)**: `create_app()` builds the whole app. A new router is
+  one line in its `ROUTERS` list; a client the app shares (like `SupabaseAuth`) is built
+  in its lifespan, stored on `app.state` and reached through a dependency
 
 ### Environment Variables
 
@@ -155,7 +163,7 @@ class ExampleService:
 
 ### External Services (Third-Party Integrations)
 
-Third-party services (Supabase, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method. See `app/core/supabase_client.py` for the pattern in use.
+Third-party services (Supabase, Cloudinary, etc.) are encapsulated in dedicated **class-based** modules within the `app/core/` directory. API key loading and client initialization happens in the `__init__` method. See `app/core/supabase_auth_client.py` for the pattern in use: one instance built in the lifespan (`app/factory.py`), stored on `app.state`, handed to routes by a dependency (`get_auth` in `app/core/auth.py`), raising the module's own exceptions rather than the library's. Building a client must not call the network, so the app starts, and tests run, with blank settings.
 
 ```python
 # app/core/cloudinary_client.py (example of adding a new integration)
@@ -181,7 +189,9 @@ pieces (e.g. a RevenueCat webhook) only when a feature needs them.
 ### Authentication
 
 Protect any endpoint by depending on `get_current_user`, which verifies the Supabase JWT
-from the `Authorization: Bearer <token>` header:
+from the `Authorization: Bearer <token>` header with Supabase Auth. A bad or expired
+token is a 401 (the app should sign in again); Supabase being unreachable or failing is a
+503, so an outage never tells the app its session is invalid:
 
 ```python
 from fastapi import APIRouter, Depends
@@ -195,6 +205,17 @@ router = APIRouter()
 async def protected_route(user: User = Depends(get_current_user)):
     return {"user_id": user.id}
 ```
+
+A route that must act AS the user against Supabase (the deletion endpoint is the one
+example) depends on `get_caller` instead, which returns a `Caller` with the verified
+`user` and the raw `token`. Pass the token on; never accept a user id from the request.
+
+### Webhooks
+
+A route a webhook calls (a Supabase database webhook, say) takes the shared-secret check
+as a dependency: `dependencies=[Depends(verified_webhook(lambda: get_settings().my_secret))]`,
+from `app/core/webhooks.py`. It compares in constant time and refuses everything while the
+secret is blank. `POST /emails/welcome` is the example.
 
 ## Testing
 
@@ -217,21 +238,42 @@ Tests live in `app/tests/`, one file per feature (`test_routes.py`, `test_emails
 
 ### Key Fixtures (see `app/tests/conftest.py`)
 
-- `app` - Fresh FastAPI app instance with cleared dependency overrides
+- `fake_auth` - A `FakeSupabaseAuth` (`app/tests/fakes.py`), the in-memory Supabase Auth
+- `app` - A fresh app from `create_app()` for every test, with `get_auth` overridden by `fake_auth`
 - `async_client` - HTTP client for endpoint testing
 
-Override auth in tests with FastAPI dependency overrides:
+Sign a user in on the fake and send their token, and the real `get_current_user` runs:
+
+```python
+async def test_my_route(async_client, fake_auth):
+    token = fake_auth.sign_in("123")
+    response = await async_client.get("/my-route", headers={"Authorization": f"Bearer {token}"})
+```
+
+`fake_auth.unavailable = True` exercises the 503 path. To skip auth altogether, override
+the dependency on the test's own app. Each test gets a fresh one, so nothing leaks:
 
 ```python
 from types import SimpleNamespace
 from app.core.auth import get_current_user
-from app.main import app as fastapi_app
 
-async def override_current_user():
-    return SimpleNamespace(id="123")
-
-fastapi_app.dependency_overrides[get_current_user] = override_current_user
+async def test_my_route(app, async_client):
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(id="123")
 ```
+
+An outgoing HTTP call gets a seam for its httpx transport and is tested with
+`httpx.MockTransport`: `SupabaseAuth(url, key, transport=...)`, and the module-level
+`transport` in `app/services/email.py` for Resend.
+
+### Integration test (local Supabase only)
+
+`app/tests/test_account_deletion_integration.py` is marked `integration`. It creates a
+throwaway user on the LOCAL stack, calls `DELETE /auth/users/me`, and checks that the auth
+user and the `public.users` row are gone. A plain `uv run pytest` leaves it out (`addopts` in
+`pyproject.toml`), so the suite passes without Docker. Run it with `uv run pytest -m
+integration` after `npx supabase start`; it skips itself unless `SUPABASE_URL` is a
+127.0.0.1/localhost URL that answers. Check `npx supabase status` first: another
+project's stack on the same port answers too, and the test would run against it.
 
 ## Database
 
@@ -261,10 +303,13 @@ fastapi_app.dependency_overrides[get_current_user] = override_current_user
 - An auth trigger creates the `public.users` row for each new `auth.users` row; a foreign key (`ON DELETE CASCADE`) removes it with the account
 - Two migrations to start: `20260101120000_initial_schema.sql` (tables, keys, RLS, grants, triggers) and `20260101120100_app_functions.sql` (`delete_own_account()`, `keepalive()`). New migrations get a timestamp later than both
 - `delete_own_account()` — `SECURITY DEFINER`, no arguments, deletes only
-  `auth.uid()`, EXECUTE granted to `authenticated` only. The app calls it with
+  `auth.uid()`, EXECUTE granted to `authenticated` only. It is the single
+  implementation of account deletion. The app calls it with
   `supabase.rpc('delete_own_account')` — or, with `ACCOUNT_DELETION = 'api'`
-  in its `src/lib/api.ts`, `DELETE /auth/users/me` on this API, which does the
-  same deletion with the service-role key. Follow the same shape for any future
+  in its `src/lib/api.ts`, `DELETE /auth/users/me` on this API, which calls
+  the same function (`POST /rest/v1/rpc/delete_own_account`) as the caller,
+  with the caller's own token. So a feature extends the function, never the
+  endpoint. Follow the same shape for any future
   privileged-but-self-scoped operation; never accept a user id as a parameter.
 - `keepalive()` — `STABLE`, `SECURITY INVOKER`, no arguments, reads no table,
   returns `now()`; EXECUTE granted to `anon` + `authenticated`. It's the
@@ -385,6 +430,7 @@ path to production.
 | Install dependencies | `uv sync --all-groups` |
 | Run dev server | `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080` |
 | Run tests | `uv run pytest` |
+| Run the local-stack integration test | `uv run pytest -m integration` |
 | Start local Supabase | `npx supabase start` |
 | Apply new migrations locally | `npx supabase migration up` |
 | Rebuild the local database from empty | `npx supabase db reset` |

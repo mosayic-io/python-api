@@ -32,3 +32,12 @@ constraint-dependencies = [
     "cryptography<49 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "cryptography>=50 ; sys_platform != 'darwin' or platform_machine != 'x86_64'",
 ]
+
+[tool.pytest.ini_options]
+# The integration test runs only when asked for (`uv run pytest -m
+# integration`): any local Supabase stack on port 54321 answers, even another
+# project's, so a plain `uv run pytest` never touches one.
+addopts = "-m 'not integration'"
+markers = [
+    "integration: runs against the LOCAL Supabase stack (`npx supabase start`); skips itself when it isn't running",
+]

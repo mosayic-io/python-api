@@ -3,7 +3,6 @@ from types import SimpleNamespace
 import pytest
 
 from app.core.auth import get_current_user
-from app.main import app as fastapi_app
 
 
 @pytest.mark.asyncio
@@ -22,11 +21,11 @@ async def test_protected_route_requires_auth(async_client):
 
 
 @pytest.mark.asyncio
-async def test_protected_route_with_auth(async_client):
+async def test_protected_route_with_auth(app, async_client):
     async def override_current_user():
         return SimpleNamespace(id="123")
 
-    fastapi_app.dependency_overrides[get_current_user] = override_current_user
+    app.dependency_overrides[get_current_user] = override_current_user
 
     response = await async_client.get("/protected")
 
